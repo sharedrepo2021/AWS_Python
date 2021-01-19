@@ -1,0 +1,37 @@
+a = "It is a wonderful day ."
+print(a.upper())
+print(a.lower())
+print(a.casefold())
+print(a.center(20))
+print(a.count("a"))
+print(a.encode())
+print(a.endswith("y"))
+print(a.find("a"))
+print(a.index("wonderful"))
+print(a.isalnum())
+print(a.isdecimal())
+print(a.isdigit())
+print(a.islower())
+print(a.isalpha())
+print(a.isidentifier())
+print(a.lstrip())
+print(a.zfill(30))
+
+my_table = a.maketrans("a","@")
+print(a.translate(my_table))
+print(a.title())
+print(a.swapcase())
+print(a.startswith("It"))
+print(a.split())
+print(a.rstrip('.'))
+print(a.rpartition("a"))
+print(a.rjust(30))
+print(a.rindex("a"))
+print(a.rfind("a"))
+print(a.replace("is","was"))
+print(a.partition("a"))
+
+x = "No"
+print(x.join(a))
+
+
