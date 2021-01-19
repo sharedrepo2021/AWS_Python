@@ -73,67 +73,11 @@ class Database:
 
         self.my_cursor.execute(self.query)
 
-    def contact_search(self):
-        search_criteria = {
-            1: 'first_name',
-            2: 'last_name',
-            3: 'phone_number',
-            4: 'email',
-            5: 'city',
-            6: 'birthday'
-        }
-        print(json.dumps(search_criteria, indent=5))
-        user_input = int(input('Please select the option you want to search: '))
+    def contact_search(self, schema_name, table_name, field_name, field_value):
 
-        if user_input == 1:
-            search_first_name = input('Please enter the first name of the user to be searched: ')
-            self.query = '''
-                SELECT * FROM dbo.addressbook WHERE First_Name = '{}' '''.format(search_first_name)
-            self.my_cursor.execute(self.query).fetchall()
-            query = pd.read_sql_query(self.query, self.conn)
-            df = pd.DataFrame(query)
-            print(df)
-        elif user_input == 2:
-            search_last_name = input('Please enter the last name of the user to be searched: ')
-            self.query = '''
-                SELECT * FROM dbo.addressbook WHERE Last_Name = '{}' '''.format(search_last_name)
-            self.my_cursor.execute(self.query).fetchall()
-            query = pd.read_sql_query(self.query, self.conn)
-            df = pd.DataFrame(query)
-            print(df)
-        elif user_input == 3:
-            search_phone_number = input('Please enter the phone number of the user to be searched: ')
-            self.query = '''
-                SELECT * FROM dbo.addressbook WHERE Phone_Number = '{}' '''.format(search_phone_number)
-            self.my_cursor.execute(self.query).fetchall()
-            query = pd.read_sql_query(self.query, self.conn)
-            df = pd.DataFrame(query)
-            print(df)
-        elif user_input == 4:
-            search_email = input('Please enter the email address of the user to be searched: ')
-            self.query = '''
-                SELECT * FROM dbo.addressbook WHERE Email_Address = '{}' '''.format(search_email)
-            self.my_cursor.execute(self.query).fetchall()
-            query = pd.read_sql_query(self.query, self.conn)
-            df = pd.DataFrame(query)
-            print(df)
-        elif user_input == 5:
-            search_city = input('Please enter the name of the city the user belongs to: ')
-            self.query = '''
-                SELECT * FROM dbo.addressbook WHERE City = '{}' '''.format(search_city)
-            self.my_cursor.execute(self.query).fetchall()
-            query = pd.read_sql_query(self.query, self.conn)
-            df = pd.DataFrame(query)
-            print(df)
-        elif user_input == 6:
-            search_city = input('Please enter the date of birth of the user to be searched(YYYY-MM-DD): ')
-            self.query = '''
-                SELECT * FROM dbo.addressbook WHERE DOB = '{}' '''.format(search_city)
-            self.my_cursor.execute(self.query).fetchall()
-            query = pd.read_sql_query(self.query, self.conn)
-            df = pd.DataFrame(query)
-            print(df)
-        else:
-            print('Please select an appropriate option')
-
-
+        self.query = '''
+                SELECT * FROM {}.{} WHERE {} = '{}' '''.format(schema_name, table_name, field_name, field_value)
+        self.my_cursor.execute(self.query).fetchall()
+        query = pd.read_sql_query(self.query, self.conn)
+        df = pd.DataFrame(query)
+        print(df)

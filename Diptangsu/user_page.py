@@ -51,7 +51,7 @@ class Addressbook:
             self.db.commit()
             print('Contact has been added')
         except Exception as e:
-            print('Please provide appropriate input', e)
+            print('Please provide appropriate input. Error: ', e)
 
     def delete_records(self):
         self.get_field_name()
@@ -61,34 +61,54 @@ class Addressbook:
         print('Contact has been deleted')
 
     def search_contact(self):
-        self.db.contact_search()
+        try:
+            search_criteria = {
+                1: 'first_name',
+                2: 'last_name',
+                3: 'phone_number',
+                4: 'email',
+                5: 'city',
+                6: 'birthday'
+            }
+            print(json.dumps(search_criteria, indent=5))
+            user_input = int(input('Please select the option you want to search: '))
+
+            self.field_name = search_criteria[user_input]
+            self.field_value = input('Enter the value you want to search: ')
+
+            self.db.contact_search(self.schema_name, self.table_name, self.field_name, self.field_value)
+        except Exception as e:
+            print('Please select a valid input. Error: ', e)
 
     def update_contact(self):
-        self.display_addressbook()
+        try:
+            self.display_addressbook()
 
-        self.field_name = 'SL_No'
-        self.field_value = input('Enter the row number you want to update')
+            self.field_name = 'SL_No'
+            self.field_value = input('Enter the row number you want to update: ')
 
-        option_dict = {
-            1: 'First_Name',
-            2: 'Last_Name',
-            3: 'Phone_Number',
-            4: 'Address',
-            5: 'Email Address',
-            6: 'City',
-            7: 'DOB'
-        }
-        print(json.dumps(option_dict, indent=5))
-        user_input = int(input('Please select the option you want to update: '))
+            option_dict = {
+                1: 'First_Name',
+                2: 'Last_Name',
+                3: 'Phone_Number',
+                4: 'Address',
+                5: 'Email Address',
+                6: 'City',
+                7: 'DOB'
+            }
+            print(json.dumps(option_dict, indent=5))
+            user_input = int(input('Please select the option you want to update: '))
 
-        self.column_name = option_dict[user_input]
-        self.column_value = input('Enter the modified value: ')
+            self.column_name = option_dict[user_input]
+            self.column_value = input('Enter the modified value: ')
 
-        self.db.update_row(self.schema_name, self.table_name, self.column_name, self.column_value, self.field_name,
-                           self.field_value)
-        self.db.commit()
-        print('Contact has been updated')
-        self.display_addressbook()
+            self.db.update_row(self.schema_name, self.table_name, self.column_name, self.column_value, self.field_name,
+                               self.field_value)
+            self.db.commit()
+            print('Contact has been updated')
+            self.display_addressbook()
+        except Exception as e:
+            print('Please provide a proper input. Error: ', e)
 
     def get_choice(self):
         choices_dict = {
