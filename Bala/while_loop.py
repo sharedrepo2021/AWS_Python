@@ -1,6 +1,8 @@
-idx = 0
+# from calc import Calc
+#
+# c = Calc()
+# print(c.sum(2, 3))
 
-while idx <= 10:
-    print(idx)
-    idx += 1
+
+from pwdgene import PasswordGene
 
