@@ -13,6 +13,7 @@ class AddressbookTable:
         self.cursor = None
         self.fake = faker.Faker()
         self.conn = None
+        self.new = 0
 
 
 
