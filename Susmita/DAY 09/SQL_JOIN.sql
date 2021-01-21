@@ -45,3 +45,18 @@ SELECT A.*, B.*
 FROM Person.Person as A INNER JOIN
 Person.PersonPhone as B
 ON A.BusinessEntityID = B.BusinessEntityID
+
+-- CREATE AN EMPY TABLE
+SELECT * INTO Susmita.Person
+FROM [Person].[Person]
+WHERE 1 = 0;
+
+-- INSERT DATA INTO NEW TABLE
+INSERT INTO Susmita.Person
+SELECT TOP 3 * FROM [Person].[Person]
+
+-- VIEW THE NEWLY CREATED TABLE
+SELECT * FROM Susmita.Person
+SELECT * FROM [Person].[Person]
+
+UPDATE Susmita.Person SET BusinessEntityID = 4 WHERE BusinessEntityID = 3
