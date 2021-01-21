@@ -4,7 +4,7 @@ import string
 import random
 
 window = tk.Tk()
-window.title('My Window')
+window.title('Password Generator')
 window.geometry('100x100')
 
 l = tk.Label(window, bg='white', width=20, text='empty')
@@ -19,9 +19,6 @@ def say_hi():
 def print_selection():
 
     if (var1.get() == 1) & (var2.get() == 0):
-
-
-
         passwordlength = int(input("Password Length:"))
         passwordcharacters = string.ascii_letters
         password = []
@@ -31,12 +28,25 @@ def print_selection():
         print(password)
 
     elif (var1.get() == 0) & (var2.get() == 1):
-        l.config(text='I love C++')
-    elif (var1.get() == 0) & (var2.get() == 0):
-        l.config(text='Please select one')
-    else:
-        l.config(text='I love both')
+        passwordlength = int(input("Password Length:"))
+        passwordcharacters = string.digits
+        password = []
+        for x in range(passwordlength):
+            (password.append(random.choice(passwordcharacters)))
+        password = "".join(password)
+        print(password)
 
+
+    elif (var1.get() == 0) & (var2.get() == 0):
+        l.config(text='')
+    else:
+        passwordlength = int(input("Password Length:"))
+        passwordcharacters = string.digits + string.ascii_letters
+        password = []
+        for x in range(passwordlength):
+            (password.append(random.choice(passwordcharacters)))
+        password = "".join(password)
+        print(password)
 
 
 var1 = tk.IntVar()

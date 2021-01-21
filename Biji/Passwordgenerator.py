@@ -5,6 +5,14 @@ import json
 
 class Passwordgenerator:
 
+    def createrandompwd(self):
+        passwordlength = int(input("Password Length:"))
+        passwordcharacters = string.ascii_letters+ string.punctuation + string.digits
+        password = []
+        for x in range(passwordlength):
+            (password.append(random.choice(passwordcharacters)))
+        password = "".join(password)
+        print(password)
     def createrandompwdletters(self):
         passwordlength = int(input("Password Length:"))
         passwordcharacters = string.ascii_letters
@@ -49,7 +57,8 @@ option_dict = {
     2: 'Digits',
     3: 'Othercharacters',
     4: 'Exclude characters',
-    5: 'Exit'
+    5: 'including all',
+    6: 'Exit'
 }
 print(json.dumps(option_dict, indent=4))
 
@@ -66,6 +75,8 @@ while True:
     elif choice == 4:
         objpwd.createrandompwdexcludecharacters()
     elif choice == 5:
+        objpwd.createrandompwd()
+    elif choice == 6:
         break
     else:
         print("Enter valid option ")
