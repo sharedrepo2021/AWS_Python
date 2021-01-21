@@ -15,8 +15,6 @@ class AddressbookTable:
         self.conn = None
         self.new = 0
 
-
-
     def sqlconnection(self):
         self.conn = pyodbc.connect('Driver={SQL Server};'
                               'Server=BALALENG50\SQLEXPRESS;'

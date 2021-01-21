@@ -15,7 +15,6 @@ class Addressbook:
                                  'Database=employee;'
                                  'Trusted_Connection=yes;')
         self.cursor = self.con.cursor()
-
     def showaddressbook(self):
         query="select * from person.details"
         #sqltab= pd.read_sql_query(query,self.con)
@@ -39,9 +38,6 @@ class Addressbook:
         else:
             for i in range(len(var)):
                 print(var[i])
-
-
-
     def insertdata(self):
         name = input("Enter name :")
         address = input("Enter Address ")
