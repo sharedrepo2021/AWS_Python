@@ -9,9 +9,13 @@ class DBase:
         self.table_name = None
 
     def connect(self):
+        # self.conn = pyodbc.connect('Driver={SQL Server};'
+        #                       'Server=DESKTOP-1HL1TR2\SQLEXPRESS;'
+        #                       'Database=AdventureWorks2019;'
+        #                       'Trusted_Connection=yes;')
         self.conn = pyodbc.connect('Driver={SQL Server};'
-                              'Server=DESKTOP-1HL1TR2\SQLEXPRESS;'
-                              'Database=AdventureWorks2019;'
+                              'Server=DESKTOP-5H4SDFK\SQLEXPRESS;'
+                              'Database=LocalDB;'
                               'Trusted_Connection=yes;')
         self.cursor = self.conn.cursor()
 
@@ -27,6 +31,7 @@ class DBase:
 
     def create_table(self):
         query = '''
+        if not exists (select * from sysobjects where name='{}' and xtype='U')
         CREATE TABLE Susmita.{} (
             ID smallint NOT NULL IDENTITY(1,1),	
             Name varchar(255) NOT NULL,	
@@ -35,7 +40,7 @@ class DBase:
             Zip varchar(25),
             Phone varchar(25)
             );
-        '''.format(self.table_name)
+        '''.format(self.table_name, self.table_name)
         self.cursor.execute(query)
 
     def insert_data(self):
@@ -58,7 +63,7 @@ class DBase:
         sql_query_df = pd.read_sql_query(query, self.conn)
         return sql_query_df
 
-    def update_table(self, id):
+    def update_table(self, name):
         print("Now enter address, city, zip and phone number...")
         _address = input("Enter address: ")
         _city = input("Enter city: ")
@@ -68,22 +73,27 @@ class DBase:
         query = '''
         UPDATE Susmita.{} 
         SET Address = '{}', City = '{}', Zip = '{}', Phone = '{}'
-        WHERE ID = {};
-        '''.format(self.table_name, _address, _city, _zip, _phone, id)
-
+        WHERE Name = '{}';
+        '''.format(self.table_name, _address, _city, _zip, _phone, name)
         self.cursor.execute(query)
 
-    def delete_table(self, id):
+    def delete_row(self, id):
         query = '''
         DELETE FROM Susmita.{} 
         WHERE ID = {};
         '''.format(self.table_name, id)
-
         self.cursor.execute(query)
 
-    def get_specific_row(self, name):
-        query = "SELECT * FROM Susmita.{} WHERE Name = '{}'".format(self.table_name, name)
+    def get_specific_row(self, f_name, f_value):
+        query = "SELECT * FROM Susmita.{} WHERE {} = '{}';".format(self.table_name, f_name, f_value)
+        print(query)
         sql_query_df = pd.read_sql_query(query, self.conn)
         return sql_query_df
+
+    def delete_table(self):
+        query = "DROP TABLE Susmita.{};".format(self.table_name)
+        self.cursor.execute(query)
+
+
 
 

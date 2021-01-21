@@ -29,6 +29,7 @@ class Addressbook:
 
     def get_addressbook_name(self):
         self.datastore.set_tablename(input("Provide the name of your addressbook: "))
+        self.datastore.create_table()
 
     def display_all_entries(self):
         self.all_entries_df = self.datastore.get_all_rows()
@@ -40,14 +41,37 @@ class Addressbook:
 
     def delete_an_entry(self):
         id = int(input("Enter the ID value of the entry you want to delete :: "))
-        self.datastore.delete_table(id)
+        self.datastore.delete_row(id)
         self.datastore.commit()
         print("Entry deleted successfully! ")
 
-    def search_an_entry(self, name):
-        # id = int(input("Enter the ID value of the entry you want to search :: "))
-        self.all_entries_df = self.datastore.get_specific_row(name)
+    def search_an_entry(self):
+        print("Search Options::")
+        search_option_dict = {
+            1: 'Name',
+            2: 'Address',
+            3: 'City',
+            4: 'Zip',
+            5: 'Phone'
+        }
+        print(json.dumps(search_option_dict, indent=4))
+
+        field_name = search_option_dict[int(input("Select Option: "))]
+        field_value = input("Enter search string: ")
+
+        self.all_entries_df = self.datastore.get_specific_row(field_name, field_value)
         print(self.all_entries_df)
+
+    def update_an_entry(self):
+        name = input("Enter the name of the entry you want to update :: ")
+        self.datastore.update_table(name)
+        self.datastore.commit()
+        print("Entry update successfully! ")
+
+    def delete_table(self):
+        self.datastore.delete_table()
+        self.datastore.commit()
+        print("Table deleted successfully! ")
 
 
 if __name__ == '__main__':
@@ -77,21 +101,17 @@ if __name__ == '__main__':
             addr.delete_an_entry()
 
         elif option == 5:
-            print("Search Options::")
-            search_option_dict = {
-                1: 'Press 1 for Name search',
-                2: 'Press 2 for Address search',
-                3: 'Press 3 for City search',
-                4: 'Press 4 for Zip search',
-                5: 'Press 5 for Phone search',
-            }
+            addr.search_an_entry()
 
-            print(json.dumps(search_option_dict, indent=4))
-            option = int(input("Select Option: "))
+        elif option == 6:
+            addr.update_an_entry()
 
-            if option == 1:
-                name_search = input("Enter the name here you want to search:: ")
-                addr.search_an_entry(name_search)
+        elif option == 7:
+            addr.delete_table()
+
+
+
+
 
 
 
