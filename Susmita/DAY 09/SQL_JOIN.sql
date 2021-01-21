@@ -38,3 +38,10 @@ WHERE B.PhoneNumber IN
 SELECT A.PhoneNumber
 FROM Susmita.PersonPhone A
 )
+
+
+SELECT A.*, B.*
+
+FROM Person.Person as A INNER JOIN
+Person.PersonPhone as B
+ON A.BusinessEntityID = B.BusinessEntityID
