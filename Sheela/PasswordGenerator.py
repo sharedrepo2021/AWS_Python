@@ -17,7 +17,6 @@ class PasswordGen :
             password = digit1 + digit2 + digit3 + digit4
             for b in range(passlength - 4):
                 password = password + random.choice(chars)
-                print("password2",password)
             self.passlist.append(password)
         return self.passlist
 
