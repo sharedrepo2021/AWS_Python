@@ -1,22 +1,41 @@
-import pyodbc
-import pandas as pd
-import faker
-import json as js
-import random
-from tabulate import tabulate
-import re
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email import encoders
 
+fromaddr = "email_address_of_the_sender"
+toaddr = "email_address_of_the_receiver"
 
-conn = pyodbc.connect('Driver={SQL Server};'
-                              'Server=BALALENG50\SQLEXPRESS;'
-                              'Database=ADDRESSBOOK;'
-                              'Trusted_Connection=yes;')
+# MIMEMultipart
+msg = MIMEMultipart()
 
-cursor = conn.cursor()
-email = input("Enter email")
+# senders email address
+msg['From'] = "shesiva@gmail.com"
 
-while not re.match("^[a-z0-9]+[\.]?[a-z0-9]+[@]\w+[.]\w{2,3}$", email):
+# receivers email address
+msg['To'] = "shesiva@gmail.com"
 
-    print ("Error! Make sure you only use letters in your name")
-    email = input("Enter email")
-print("Hello " + email)
+# the subject of mail
+msg['Subject'] = "subject_of_the_mail"
+
+# the body of the mail
+body = "body_of_the_mail"
+
+# creates SMTP session
+email = smtplib.SMTP('smtp.gmail.com', 587)
+
+# TLS for security
+email.starttls()
+
+# authentication
+email.login(fromaddr, "Password_of_the_sender")
+
+# Converts the Multipart msg into a string
+message = msg.as_string()
+
+# sending the mail
+email.sendmail(fromaddr, toaddr, message)
+
+# terminating the session
+s.quit()
