@@ -30,3 +30,11 @@ Person.PersonPhone as B,
 Person.BusinessEntity as C
 WHERE A.BusinessEntityID = B.BusinessEntityID
 AND B.BusinessEntityID = C.BusinessEntityID;
+
+SELECT *
+FROM [Person].[PersonPhone] B
+WHERE B.PhoneNumber IN
+(
+SELECT A.PhoneNumber
+FROM Susmita.PersonPhone A
+)
