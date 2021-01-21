@@ -32,15 +32,18 @@ class PasswordGenerator:
         pyperclip.copy(random_password)
 
     def main(self):
-        self.root.geometry("400x500")
+        self.root.geometry("400x300")
         self.root.title("Password Generator")
         self.pass_len.set(0)
 
-        Label(self.root, text='Enter password length').pack(pady=3)
-        Entry(self.root, textvariable=self.pass_len).pack(pady=3)
+        Label(self.root, text='Enter password length').pack(pady=5)
+        Entry(self.root, textvariable=self.pass_len).pack(pady=5)
+
         Button(self.root, text='Generate password', command=self.pass_generator).pack()
-        Entry(self.root, textvariable=self.pass_str).pack(pady=3)
+        Entry(self.root, textvariable=self.pass_str).pack(pady=5)
+
         Button(self.root, text='Copy to clipboard', command=self.copy_clipboard).pack()
+
         self.root.mainloop()
 
 
