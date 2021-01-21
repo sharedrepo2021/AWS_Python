@@ -22,3 +22,11 @@ ON Susmita.Person.BusinessEntityID = Susmita.PersonPhone.BusinessEntityID
 SELECT *
 FROM Susmita.Person FULL OUTER JOIN Susmita.PersonPhone
 ON Susmita.Person.BusinessEntityID = Susmita.PersonPhone.BusinessEntityID
+
+SELECT A.PersonType,B.*,C.rowguid
+
+FROM Person.Person as A,
+Person.PersonPhone as B,
+Person.BusinessEntity as C
+WHERE A.BusinessEntityID = B.BusinessEntityID
+AND B.BusinessEntityID = C.BusinessEntityID;
