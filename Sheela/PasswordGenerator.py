@@ -7,17 +7,17 @@ class PasswordGen :
 
     def autopasswordgen(self,numpass,passlength):
 
-        digit1 = random.choice(string.ascii_uppercase)
-        digit2 = random.choice(string.ascii_lowercase)
-        digit3 = random.choice(string.digits)
-        digit4 = random.choice(string.punctuation)
         chars = string.ascii_uppercase + string.ascii_lowercase + string.digits + string.punctuation
         for p in range(numpass):
+            digit1 = random.choice(string.ascii_uppercase)
+            digit2 = random.choice(string.ascii_lowercase)
+            digit3 = random.choice(string.digits)
+            digit4 = random.choice(string.punctuation)
             password = ""
-            for a in range(4):
-                password = digit1 + digit2 + digit3 + digit4
+            password = digit1 + digit2 + digit3 + digit4
             for b in range(passlength - 4):
                 password = password + random.choice(chars)
+                print("password2",password)
             self.passlist.append(password)
         return self.passlist
 
