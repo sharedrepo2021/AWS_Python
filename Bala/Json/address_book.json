@@ -1,0 +1,28 @@
+{
+  "Addressbook": [
+    {
+      "first_name": "Balamurugan",
+      "last_name": "Ravikumar",
+      "street_address": "9K Penn Pl",
+      "city": "Rocky Hill",
+      "zip_code": "06067",
+      "phone_no": "2107801143"
+    },
+    {
+      "first_name": "Sheela",
+      "last_name": "Sivaprakasam",
+      "street_address": "9K Penn Pl ",
+      "city": "Rocky Hill ",
+      "zip_code": "06067",
+      "phone_no": "8607224773"
+    },
+    {
+      "first_name": "Mirithika ",
+      "last_name": "Balamurugan",
+      "street_address": "9K Penn Pl",
+      "city": "RJ",
+      "zip_code": "06067",
+      "phone_no": "8601143477"
+    }
+  ]
+}
