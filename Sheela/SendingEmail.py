@@ -8,27 +8,54 @@ class SendingEmail:
     def __init__(self):
         self.fromemail = 0
         self.fromemailpass = 0
+        self.finallist = []
+        self.errorlist = []
 
     def send_mail(self, toemaillist, subject, message):
 
         self.fromemail = os.environ.get('EMAIL_USER')
         self.fromemailpass = os.environ.get('EMAIL_PASS')
 
-        msg = EmailMessage()
-        msg['Subject'] = subject
-        msg['From'] = self.fromemail
-        msg['To'] = ', '.join(toemaillist)
-        msg.set_content(message)
+        for a in toemaillist:
+            isvalid = self.check(a)
 
-        server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
-        server.login(self.fromemail, self.fromemailpass)
-        server.send_message(msg)
-        server.quit()
-        print(' Mail has been sent successfully .')
+            if isvalid:
+                self.finallist.append(a)
+            else:
+                self.errorlist.append(a)
+
+        if len(self.errorlist) > 0:
+            print("Mail not sent to the following email as they were Invalid", self.errorlist)
+
+        if len(self.errorlist) != len(toemaillist):
+
+            msg = EmailMessage()
+            msg['Subject'] = subject
+            msg['From'] = self.fromemail
+            msg['To'] = ', '.join(self.finallist)
+            msg.set_content(message)
+            server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+            server.login(self.fromemail, self.fromemailpass)
+            server.send_message(msg)
+            server.quit()
+            print(' Mail has been sent successfully .')
+
+        else:
+            print("No Valid Email ID were there to send email")
+
+
+
+    def check(self, email):
+        regex = "^[a-z0-9]+[\._]?[a-z0-9]+[@]\w+[.]\w{2,3}$"
+        if (re.search(regex, email)):
+            return True
+        else:
+            return False
 
 
 
 if __name__ == '__main__':
+
 
     print("SEND EMAIL")
     toemaillist = []
@@ -38,11 +65,6 @@ if __name__ == '__main__':
 
     for i in range(numtoemaidid):
         toemaidid = input("Enter the email id to send the email :")
-
-        while not re.match("^[a-z0-9]+[\.]?[a-z0-9]+[@]\w+[.]\w{2,3}$", toemaidid):
-            print("Invalid Email ID! Make sure you give proper email ID")
-            break
-
         toemaillist.append(toemaidid)
 
     subject = input("Enter the subject of the Email :")
