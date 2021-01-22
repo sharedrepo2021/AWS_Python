@@ -7,7 +7,7 @@ class Sendmail:
     def __init__(self):
         sender = ""
         pwd = ""
-        receiver = ""
+        receiver =[]
         message=""
 
     def getinputs(self):
@@ -17,7 +17,7 @@ class Sendmail:
        self.  message=EmailMessage()
        self.message['subject'] = input("Subject")
        self.message['From'] =self.sender
-       self.message['To'] =self.receiver
+       self.message['To'] = self.receiver
        self.message.set_content(input("Enter the message:"))
 
     def sendmail(self):
