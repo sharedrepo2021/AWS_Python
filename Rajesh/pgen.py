@@ -13,7 +13,7 @@ class PassGen:
         try:
             self.length = int(entry_pwd_length.get())
             if self.length > 5:
-                self.psword = ''.join(secrets.choice(string.ascii_uppercase + string.ascii_lowercase) \
+                self.psword = ''.join(secrets.choice(string.ascii_uppercase + string.ascii_lowercase)
                            for _ in range(self.length))
                 label_pwd_result["text"] = self.psword
             else:
@@ -25,7 +25,7 @@ class PassGen:
         try:
             self.length = int(entry_pwd_length.get())
             if self.length > 5:
-                self.psword = ''.join(secrets.choice(string.ascii_uppercase + string.ascii_lowercase + string.digits) \
+                self.psword = ''.join(secrets.choice(string.ascii_uppercase + string.ascii_lowercase + string.digits)
                               for _ in range(self.length))
                 label_pwd_result["text"] = self.psword
             else:
@@ -37,7 +37,7 @@ class PassGen:
         try:
             self.length = int(entry_pwd_length.get())
             if self.length > 5:
-                self.psword = ''.join(secrets.choice(string.ascii_uppercase + string.digits + string.ascii_lowercase + \
+                self.psword = ''.join(secrets.choice(string.ascii_uppercase + string.digits + string.ascii_lowercase +
                                              self.schars) for _ in range(self.length))
                 label_pwd_result["text"] = self.psword
             else:
