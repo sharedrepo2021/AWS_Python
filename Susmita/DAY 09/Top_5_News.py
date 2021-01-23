@@ -1,35 +1,17 @@
-import requests
-from win32com.client import Dispatch
+import bs4
+from bs4 import BeautifulSoup as soup
+from urllib.request import urlopen
 
+news_url = "https://news.google.com/news/rss"
+Client = urlopen(news_url)
+xml_page = Client.read()
+Client.close()
 
-def NewsFromBBC(win32com= None, Dispatch= None):
-    # BBC news api 
-    main_url = " https://newsapi.org/v1/articles?source=bbc-news&sortBy=top&apiKey=4dbc17e007ab436fb66416009dfb59a8"
-
-    # fetching data in json format 
-    open_bbc_page = requests.get(main_url).json()
-
-    # getting all articles in a string article 
-    article = open_bbc_page["articles"]
-
-    # empty list which will  
-    # contain all trending news 
-    results = []
-
-    for ar in article:
-        results.append(ar["title"])
-
-    for i in range(len(results)):
-        # printing all trending news 
-        print(i + 1, results[i])
-
-        # to read the news out loud for us 
-
-    speak = Dispatch("SAPI.Spvoice")
-    speak.Speak(results)
-
-
-# Driver Code 
-if __name__ == '__main__':
-    # function call 
-    NewsFromBBC(None, None)
+soup_page = soup(xml_page, "xml")
+news_list = soup_page.findAll("item")
+# Print news title, url and publish date
+for news in news_list:
+    print(news.title.text)
+    print(news.link.text)
+    print(news.pubDate.text)
+    print("-" * 60)
