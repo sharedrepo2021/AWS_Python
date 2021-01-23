@@ -1,6 +1,5 @@
 import smtplib
 
-
 FROM = 'chandrasusmita69@gmail.com'
 TO = ["dipan.saha@gmail.com"]
 SUBJECT = input("Subject of the Email:: ")

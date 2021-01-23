@@ -1,5 +1,8 @@
 import random
 import re
+import pyperclip
+from tkinter.ttk import Combobox
+from tkinter.ttk import *
 
 
 class Password:
@@ -12,7 +15,7 @@ class Password:
 
     def output(self):
         _nu1 = 0
-        for p in range(self.number):
+        for p in range(5):
             password = ''
             for c in range(self.number):
                 password += random.choice(self.char)
@@ -31,6 +34,9 @@ class Password:
 
 
 if __name__ == '__main__':
+    screen = Tk()
+    
+
     pas = Password()
     pas.input_length()
     pas.output()
