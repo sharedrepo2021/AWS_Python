@@ -4,7 +4,7 @@ import tkinter as tk
 from tkinter import ttk
 
 class CurrencyConverter():
-    def __init__(self,url):
+    def __init__(self, url):
         self.data = requests.get(url).json()
         self.currencies = self.data['rates']
 
