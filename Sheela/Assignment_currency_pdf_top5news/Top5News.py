@@ -1,11 +1,10 @@
 import requests
-import json as js
-
-
+import json
 
 def displayNews(url):
-    inputurl = url
-    news = requests.get(inputurl).json()
+    main_url = url
+    print(main_url)
+    news = requests.get(main_url).json()
     article = news["articles"]
 
     newarticle = []
@@ -15,8 +14,8 @@ def displayNews(url):
         newarticledesc.append(arti['description'])
 
     for i in range(5):
-        print('\n',i+1, newarticle[i])
-        print(newarticledesc[i],'\n')
+        print('\n', i+1, newarticle[i])
+        print(newarticledesc[i], '\n')
 
 if __name__ == '__main__':
 
@@ -28,15 +27,15 @@ if __name__ == '__main__':
         3: 'BBC',
         4: 'Exit'
     }
-    print(js.dumps(option_news, indent=4))
+    print(json.dumps(option_news, indent=4))
     while True:
         url = ""
         choice = input("Enter your choice: ")
         apikey = "4dccc5f982fe468096e887aabda3938a"
         if choice == "1":
-            url = 'http://newsapi.org/v2/top-headlines?' + 'country=in&' + 'apiKey=' + apikey
+            url = 'http://newsapi.org/v2/top-headlines?country=in&apiKey=' + apikey
         elif choice == "2":
-            url = 'http://newsapi.org/v2/top-headlines?' + 'country=us&' + 'apiKey=' + apikey
+            url = 'http://newsapi.org/v2/top-headlines?country=us&apiKey=' + apikey
         elif choice == "3":
             url = "https://newsapi.org/v1/articles?source=bbc-news&sortBy=top&apiKey=4dbc17e007ab436fb66416009dfb59a8"
         elif choice == "4":
