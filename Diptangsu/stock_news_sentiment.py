@@ -1,6 +1,6 @@
 from urllib.request import urlopen, Request
 from bs4 import BeautifulSoup
-from nltk.sentiment.vader import  SentimentIntensityAnalyzer
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
 import pandas as pd
 import nltk
 nltk.download('vader_lexicon')
@@ -42,17 +42,18 @@ for ticker, news_table in news_tables.items():
         parsed_data.append([ticker, date, time, title])
 
 df = pd.DataFrame(parsed_data, columns=['ticker', 'date', 'time', 'title'])
+print(df)
 
-vader = SentimentIntensityAnalyzer()
-
-f = lambda title: vader.polarity_scores(title)['compound']
-df['compound'] = df['title'].apply(f)
-df['date'] = pd.to_datetime(df.date).dt.date
-
-plt.figure(figsize=(10, 8))
-
-mean_df = df.groupby(['ticker', 'date']).mean()
-mean_df = mean_df.unstack()
-mean_df = mean_df.xs('compound', axis='columns').transpose()
-mean_df.plot(kind='bar')
-plt.show()
+# vader = SentimentIntensityAnalyzer()
+#
+# f = lambda title: vader.polarity_scores(title)['compound']
+# df['compound'] = df['title'].apply(f)
+# df['date'] = pd.to_datetime(df.date).dt.date
+#
+# plt.figure(figsize=(10, 8))
+#
+# mean_df = df.groupby(['ticker', 'date']).mean()
+# mean_df = mean_df.unstack()
+# mean_df = mean_df.xs('compound', axis='columns').transpose()
+# mean_df.plot(kind='bar')
+# plt.show()
