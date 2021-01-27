@@ -15,6 +15,10 @@ print(df['W'])
 print('\nValues in W and Z Column')
 print(df[['W', 'Z']])
 
+xuniq = list(df['X'].unique())
+print(xuniq)
+print(1.01732 in xuniq)
+
 
 # Creating new columns
 df['W+Y'] = df['W'] + df['Y']

@@ -65,18 +65,19 @@ class CovidTrend:
 
 if __name__ == '__main__':
 
+    option_Corona = {
+        1: 'Corona Trend for a Date',
+        2: 'Corona Trend for a Country',
+        3: 'Country Wise latest number of Confirmed Case',
+        4: 'Exit'
+    }
+
+    c = CovidTrend()
+
     while True:
-        option_Corona = {
-            1: 'Corona Trend for a Date',
-            2: 'Corona Trend for a Country',
-            3: 'Country Wise latest number of Confirmed Case',
-            4: 'Exit'
-        }
-
         print(js.dumps(option_Corona, indent=4))
-
-        c = CovidTrend()
         choice = input("Enter your choice::::")
+
         if choice == "1":
             date = input("Enter the date for which you want to see the trend:")
             c.show_covid_result_date(date)

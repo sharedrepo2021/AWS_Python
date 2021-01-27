@@ -1,5 +1,7 @@
-from currency_converter import CurrencyConverter
-c = CurrencyConverter()
+from pyutils import PDF
 
-print(c.convert(1, 'CAD', 'USD'))
+pdf_file = PDF()
 
+pdf_file.set_pdf_path(r'D:\My_Bala\My_Study\test.pdf')
+
+pdf_file.one_min_ten_seconds()
