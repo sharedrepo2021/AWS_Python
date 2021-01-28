@@ -17,7 +17,12 @@ class DBase:
 
     def commit(self):
         _query = 'COMMIT'
-        self.cursor.execute(_query)
+        try:
+            self.cursor.execute(_query)
+        except pyodbc.ProgrammingError:
+            pass
+        except Exception as e:
+            print('Unable to commit...')
 
     def disconnect(self):
         self.cursor.close()
