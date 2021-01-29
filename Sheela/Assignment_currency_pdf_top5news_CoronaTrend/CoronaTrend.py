@@ -43,7 +43,7 @@ class CovidTrend:
             plt.show()
 
     def show_covid_result_countrywiselatest(self):
-        date =[]
+        date = []
         lastestcoronarecord = self.df.tail(1)
         latestdate = lastestcoronarecord.values.tolist()
         df_tempdatecountry = self.df[self.df['Date'] == latestdate[0][0]]
@@ -61,7 +61,22 @@ class CovidTrend:
             plt.legend()
             plt.show()
 
-
+    def show_covid_result_specificcountryperiod(self, country, fromdate, todate):
+        df_datedata = self.df[self.df['Date'].between(fromdate, todate, inclusive=True)]
+        df_countrydata = df_datedata[df_datedata['Country'] == country]
+        if df_countrydata.empty:
+            print("Invalid Country Name. Valid names are:")
+            print(self.df['Country'].unique())
+        else:
+            print(tabulate(df_countrydata, headers='keys', tablefmt='psql'))
+            plt.plot(df_countrydata['Date'], df_countrydata['Confirmed'], label="Confirmed")
+            plt.plot(df_countrydata['Date'], df_countrydata['Recovered'], label="Recovered")
+            plt.plot(df_countrydata['Date'], df_countrydata['Deaths'], label="Deaths")
+            plt.xlabel('Country')
+            plt.ylabel('Cases')
+            plt.title('Corona Trend_ For a Specific Country and Period')
+            plt.legend()
+            plt.show()
 
 if __name__ == '__main__':
 
@@ -69,7 +84,8 @@ if __name__ == '__main__':
         1: 'Corona Trend for a Date',
         2: 'Corona Trend for a Country',
         3: 'Country Wise latest number of Confirmed Case',
-        4: 'Exit'
+        4: 'Specific Country & Period Wise Corona Case',
+        5: 'Exit'
     }
 
     c = CovidTrend()
@@ -87,6 +103,11 @@ if __name__ == '__main__':
         elif choice == "3":
             c.show_covid_result_countrywiselatest()
         elif choice == "4":
+            countryname = input("Enter the Country Name for which you want to see the trend:")
+            startdate = input("Enter the start date :")
+            enddate = input("Enter the end date : ")
+            c.show_covid_result_specificcountryperiod(countryname, startdate, enddate)
+        elif choice == "5":
             break
         else:
             print("Invalid choice!! Give numbers specified in the options")
