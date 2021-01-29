@@ -10,7 +10,7 @@ class DBase:
 
     def connect(self):
         self.conn = pyodbc.connect('Driver={SQL Server};'
-                                   'Server=DESKTOP-5H4SDFK\SQLEXPRESS;'
+                                   'Server=DESKTOP-1HL1TR2\SQLEXPRESS;'
                                    'Database=LocalDB;'
                                    'Trusted_Connection=yes;')
         self.cursor = self.conn.cursor()
@@ -40,5 +40,6 @@ class DBase:
             sql_query_df = pd.read_sql_query(sql, self.conn)
         except Exception as e:
             print('Unable to execute query: {}...Error: {}'.format(sql, e))
+            return None
         else:
             return sql_query_df

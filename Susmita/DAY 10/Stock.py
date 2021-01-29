@@ -1,18 +1,25 @@
-import pyodbc
-import pandas as pd
 import datetime
-from yahoo_earnings_calendar import YahooEarningsCalendar
-from yahoo_fin import stock_info as si
+import json
+from urllib.request import urlopen, Request
+
+import pandas as pd
+import pyodbc
+from bs4 import BeautifulSoup
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
-from bs4 import BeautifulSoup
-from urllib.request import urlopen, Request
-import json
+from yahoo_earnings_calendar import YahooEarningsCalendar
+from yahoo_fin import stock_info as si
 
 
 def print_formatted(df):
     from tabulate import tabulate
     print(tabulate(df, headers='keys', tablefmt='psql'))
+
+
+def print_header(text):
+    print('=' * (len(text) + 2))
+    print('{} ::'.format(text))
+    print('=' * (len(text) + 2))
 
 
 class DatabaseHandler:
@@ -35,6 +42,38 @@ class DatabaseHandler:
         query = 'COMMIT'
         self.cursor.execute(query)
 
+    def create_tables(self):
+        try:
+            _sql = '''
+            IF NOT EXISTS (SELECT * FROM SYSOBJECTS WHERE NAME='Stock_Symbols' and xtype='U')
+                CREATE TABLE [Susmita].[Stock_Symbols](
+                    Symbol [varchar](10) PRIMARY KEY NOT NULL,
+                    StockName [varchar](255) NOT NULL,
+                    Current_Price DECIMAL(10,2) NOT NULL,
+                    Market_Cap [varchar](255) NULL,
+                    Country [varchar](255) NULL,
+                    IPO_Year [varchar](255) NULL,
+                    Volume [varchar](255) NULL,
+                    Sector [varchar](255) NULL,
+                    Industry [varchar](255) NULL,
+                    Update_DateTime DateTime NOT NULL
+                ) ON [PRIMARY]
+            '''
+            self.cursor.execute(_sql)
+
+            _sql = '''
+            IF NOT EXISTS (SELECT * FROM SYSOBJECTS WHERE NAME='[FavStocks]' and xtype='U')
+                CREATE TABLE [Susmita].[FavStocks](
+                    Symbol [varchar](10) PRIMARY KEY NOT NULL,
+                    StockName [varchar](255) NOT NULL
+                ) ON [PRIMARY]
+            '''
+
+        except Exception as e:
+            print('Unable to create tables...Error: {}'.format(e))
+        else:
+            self.commit()
+
     def load_stock_symbols_table(self, df):
         _row = None
         _sql = None
@@ -45,7 +84,7 @@ class DatabaseHandler:
             for _index, _row in df.iterrows():
                 _sql = "INSERT INTO {}.Stock_Symbols ([Symbol], [StockName], [Current_Price], [Market_Cap], " \
                        "[Country], [IPO_Year], [Volume], [Sector], [Industry], [Update_DateTime]) " \
-                       "values('{}','{}',{},'{}','{}','{}', '{}','{}','{}','{}')".\
+                       "values('{}','{}',{},'{}','{}','{}', '{}','{}','{}','{}')". \
                     format(self.schema, _row.Symbol, _row.StockName, _row.Current_Price, _row.Market_Cap, _row.Country,
                            _row.IPO_Year, _row.Volume, _row.Sector, _row.Industry, _current_time)
                 self.cursor.execute(_sql)
@@ -94,7 +133,9 @@ class StockHandler:
         self.stock_symbol_nyse_path = r'C:\Users\dipan\Downloads\NYSE.csv'
         self.stock_symbol_nasdaq_path = r'C:\Users\dipan\Downloads\NASDAQ.csv'
         self.finwiz_url = 'https://finviz.com/quote.ashx?t='
+
         self.db = db
+        self.db.create_tables()
 
     def refresh_stock_symbols(self):
         print('[i] Refreshing Stock Symbols...')
@@ -227,6 +268,30 @@ class StockHandler:
         self.update_stock_price(stock_symbol, _current_price)
         return _current_price
 
+    @staticmethod
+    def get_analysts_info(stock_symbol):
+        _analysts_info = si.get_analysts_info(stock_symbol)
+        for key, value in _analysts_info.items():
+            print_header(key)
+            print_formatted(value)
+
+    @staticmethod
+    def get_balance_sheet(stock_symbol):
+        _balance_sheet = si.get_balance_sheet(stock_symbol)
+        print_formatted(_balance_sheet)
+
+    @staticmethod
+    def get_all_tickers():
+        _tickers = si.tickers_sp500() + si.tickers_nasdaq() + si.tickers_other() + si.tickers_dow()
+        _tickers = sorted(list(set(_tickers)))
+        print(_tickers)
+        print(len(_tickers))
+
+    @staticmethod
+    def get_stats(stock_symbol):
+        _stats = si.get_stats(stock_symbol)
+        print(_stats)
+
     def show_upcoming_calendar(self):
         print('Showing calendar for upcoming 3 days :')
         _date_from = datetime.datetime.now()
@@ -264,7 +329,9 @@ if __name__ == '__main__':
             6: 'Show upcoming event calendar',
             7: 'Add Stock to Favorites',
             8: 'Delete Stock from Favorites',
-            9: 'Show Favorites'
+            9: 'Show Favorites',
+            10: 'Get analysts info',
+            11: 'Get balance sheet'
         }
         print(json.dumps(search_option_dict, indent=4))
 
@@ -298,6 +365,12 @@ if __name__ == '__main__':
             sh.delete_from_favorites(symbol)
         elif option == 9:
             sh.show_favorites()
+        elif option == 10:
+            symbol = input("Enter symbol: ")
+            sh.get_analysts_info(symbol)
+        elif option == 11:
+            symbol = input("Enter symbol: ")
+            sh.get_balance_sheet(symbol)
         else:
             print('Invalid option')
 
