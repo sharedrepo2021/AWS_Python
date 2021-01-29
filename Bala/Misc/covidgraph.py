@@ -7,8 +7,9 @@ import matplotlib.pyplot as plt
 class CovidGraph:
     def __init__(self):
         self.owid_url = r'https://covid.ourworldindata.org/data/owid-covid-data.csv'
-        self.covid_df = pd.read_csv(self.owid_url, usecols=['iso_code', 'continent', 'location', 'date', 'total_cases',
-                                    'new_cases', 'total_deaths', 'new_deaths'], parse_dates=['date'])
+        self.covid_df = pd.read_csv(self.owid_url, usecols=['iso_code', 'continent', 'location', 'date',
+                                                            'total_cases', 'new_cases', 'total_deaths', 'new_deaths'],
+                                    parse_dates=['date'])
 
         self.avail_countries = self.covid_df['location'].unique()
         self.covid_data = pd.DataFrame()
@@ -32,8 +33,9 @@ class CovidGraph:
 
 
     def generate_data(self):
-        self.covid_data = self.covid_df[(self.covid_df['location'] == self.covid_country ) & (self.covid_df['date'] >= self.from_date) &
-                                                 (self.covid_df['date'] <= self.to_date)]
+        self.covid_data = self.covid_df[(self.covid_df['location'] == self.covid_country )
+                                        & (self.covid_df['date'] >= self.from_date)
+                                        & (self.covid_df['date'] <= self.to_date)]
         headers = ['iso_code', 'continent', 'location', 'date', 'total_cases', 'new_cases', 'total_deaths',
                    'new_deaths']
 
@@ -61,17 +63,25 @@ if __name__ == '__main__':
         print(js.dumps(options, indent=2))
         opt = input("Select Your Option: ")
 
-        covid_graph.get_country()
-        covid_graph.get_dates()
-        covid_graph.generate_data()
-
         if opt == '1':
+            covid_graph.get_country()
+            covid_graph.get_dates()
+            covid_graph.generate_data()
             covid_graph.generate_graph('total_cases')
         elif opt == '2':
+            covid_graph.get_country()
+            covid_graph.get_dates()
+            covid_graph.generate_data()
             covid_graph.generate_graph('new_cases')
         elif opt == '3':
+            covid_graph.get_country()
+            covid_graph.get_dates()
+            covid_graph.generate_data()
             covid_graph.generate_graph('total_deaths')
         elif opt == '4':
+            covid_graph.get_country()
+            covid_graph.get_dates()
+            covid_graph.generate_data()
             covid_graph.generate_graph('new_deaths')
         elif opt == '0':
             break
