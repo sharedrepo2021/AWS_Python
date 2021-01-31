@@ -10,7 +10,7 @@ class DBase:
 
     def connect(self):
         self.conn = pyodbc.connect('Driver={SQL Server};'
-                                   'Server=DESKTOP-1HL1TR2\SQLEXPRESS;'
+                                   'Server=DESKTOP-5H4SDFK\SQLEXPRESS;'
                                    'Database=LocalDB;'
                                    'Trusted_Connection=yes;')
         self.cursor = self.conn.cursor()

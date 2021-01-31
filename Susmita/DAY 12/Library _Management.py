@@ -2,6 +2,7 @@ from SQL_DB import DBase
 from Send_Email import Email
 import pandas as pd
 import json
+import random
 
 
 def print_formatted(df):
@@ -66,7 +67,7 @@ class Library:
                NAME VARCHAR(255) NOT NULL,
                ADDRESS VARCHAR(255) NOT NULL,
                PHONE_NUMBER VARCHAR(25),
-               LIBRARY_ID INT NOT NULL           
+               LIBRARY_ID INT abs(checksum(NewId()) % 10000) NOT NULL           
                )
            '''
         self.db.execute_sql_and_commit(_query)
@@ -77,7 +78,7 @@ class Library:
                 BOOK_ID INT NOT NULL IDENTITY(1,1),
                 TRANSACTION_DATE DATE NOT NULL,
                 BOOK_TITLE VARCHAR(255) NOT NULL,
-                LIBRARY_ID VARCHAR(255) NOT NULL          
+                LIBRARY_ID INT NOT NULL          
                 )
             '''
         self.db.execute_sql_and_commit(_query)
@@ -155,6 +156,23 @@ class Library:
         result_df = self.db.execute_sql(_query)
         print_formatted(result_df)
 
+    def add_user(self):
+        _name = input("Enter name: ")
+        _address = input("Enter address: ")
+        _phone = input("Enter phone number: ")
+        _query = "INSERT INTO LIBRARY.USERS VALUES('{}', '{}', '{}')" \
+            .format(_name, _address, _phone)
+        self.db.execute_sql_and_commit(_query)
+
+    def delete_user(self, library_id):
+        _query = "DELETE FROM LIBRARY.USERS WHERE LIBRARY_ID = {} ".format(library_id)
+        self.db.execute_sql_and_commit(_query)
+
+    def show_user(self):
+        _query = "SELECT * FROM LIBRARY.USERS"
+        result_df = self.db.execute_sql(_query)
+        print_formatted(result_df)
+
 
 if __name__ == '__main__':
     lib = Library()
@@ -182,8 +200,9 @@ if __name__ == '__main__':
             7: 'View book/cd',
             8: 'Search book by author name',
             9: 'Search book by book title',
-            10: 'Get analysts info',
-            11: 'Get balance sheet'
+            10: 'Add User',
+            11: 'Show User',
+            12: 'Delete User'
         }
         print(json.dumps(search_option_dict, indent=4))
 
@@ -212,5 +231,12 @@ if __name__ == '__main__':
         elif option == 9:
             book_title = input("Enter the title of the book you want to search:: ")
             lib.search_items_book_title(book_title)
+        elif option == 10:
+            lib.add_user()
+        elif option == 11:
+            lib.show_user()
+        elif option == 12:
+            library_id = input("Enter Library ID: ")
+            lib.delete_user(library_id)
         else:
             print('Invalid option')
