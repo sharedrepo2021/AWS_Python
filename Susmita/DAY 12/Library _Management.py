@@ -2,7 +2,7 @@ from SQL_DB import DBase
 from Send_Email import Email
 import pandas as pd
 import json
-import random
+import datetime
 
 
 def print_formatted(df):
@@ -67,7 +67,7 @@ class Library:
                NAME VARCHAR(255) NOT NULL,
                ADDRESS VARCHAR(255) NOT NULL,
                PHONE_NUMBER VARCHAR(25),
-               LIBRARY_ID INT abs(checksum(NewId()) % 10000) NOT NULL           
+               LIBRARY_ID INT NOT NULL           
                )
            '''
         self.db.execute_sql_and_commit(_query)
@@ -160,8 +160,9 @@ class Library:
         _name = input("Enter name: ")
         _address = input("Enter address: ")
         _phone = input("Enter phone number: ")
-        _query = "INSERT INTO LIBRARY.USERS VALUES('{}', '{}', '{}')" \
-            .format(_name, _address, _phone)
+        _library_id = datetime.datetime.now().strftime('%Y%m%d%H')
+        _query = "INSERT INTO LIBRARY.USERS VALUES('{}', '{}', '{}', {})" \
+            .format(_name, _address, _phone, _library_id)
         self.db.execute_sql_and_commit(_query)
 
     def delete_user(self, library_id):
