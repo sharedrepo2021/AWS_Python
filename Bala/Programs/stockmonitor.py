@@ -10,6 +10,35 @@ from urllib.request import urlopen
 from urllib.request import Request
 from bs4 import BeautifulSoup
 
+class GetConvertID:
+    def __init__(self):
+        pass
+
+    def get_conv_val_id(self, idname):
+        _id_name = idname
+        while True:
+            if _id_name == 'user':
+                _val_id = input('Enter User ID: ')
+            elif _id_name == 'symbol':
+                _val_id = input('Enter Stock Symbol ID: ')
+            else:
+                _val_id = 1
+                print('Wrong Value !!!')
+
+            if _val_id.isnumeric():
+                _val_id = int(_val_id)
+                return(_val_id)
+            else:
+                print('Enter Valid ID !!!')
+
+class StockLivePrice:
+    def __init__(self):
+        pass
+
+    def liveprice(self, stksymname):
+        _stk_sym_name = stksymname
+        return(si.get_live_price(_stk_sym_name))
+
 class LoadSymbolDataFrame:
     def __init__(self):
         self.nasdaq_csv = r'https://pkgstore.datahub.io/core/nasdaq-listings/nasdaq-listed_csv/data/7665719fb51081ba0bd834fde71ce822/nasdaq-listed_csv.csv'
@@ -64,11 +93,11 @@ class HandleStockSymbolTable:
             _selectqry = "SELECT * FROM {}.{}.STK_SYMBOL_DETAILS " \
                          "WHERE Stk_Sym_Symbol='{}';".format(db_name, db_schema, stk_sym_id)
             _sql1 = pd.read_sql_query(_selectqry, db_connection)
-            return(_sql1.shape[0])
+            return(_sql1.shape[0], _sql1['Stk_Sym_ID'], _sql1['Stk_Sym_Symbol'], _sql1['Stk_Sym_Name'])
         except:
             print('error Enter Valid Stock-Symbol-ID !!!')
 
-    def insert_stk_sym(self, insertdf):
+    def insert_stk_sym_df(self, insertdf):
         _curr_date_time = dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
         _insert_df = insertdf
         try:
@@ -81,22 +110,139 @@ class HandleStockSymbolTable:
         except:
             print('SQL Error while inserting rows from STK_SYMBOL_DETAILS table !!!')
 
+    def close_stk_sym(self):
+        try:
+            db_cursor.close()
+        except:
+            print('SQL Error while closing STK_SYMBOL_DETAILS table !!!')
+
 class HandleFavUsrStkSymTable:
     def __init__(self):
-        global db_name, db_schema, db_user_id
+        global db_name, db_schema, user_id
 
-    def select_fav_usr_stk_sym(self):
+    def select_fav_usr_stk_sym(self, usrid, mode):
+        user_id = usrid
+        _what_mode = mode
         try:
-            _selectqry = 'SELECT Fav_Usr_Stk_Sym_ID as Symbol_ID, Fav_Usr_Stk_Symbol as Stock_Symbol, ' \
-                         'Fav_Usr_Stk_Name as Stock_Name FROM {}.{}.FAV_USER_STK_SYMBOL_DETAILS ' \
-                         'WHERE Fav_Usr_Stk_User_ID={} ;'.format(db_name, db_schema, db_user_id)
+            _selectqry = 'SELECT Fav_Usr_Stk_Sym_ID, Fav_Usr_Stk_Symbol, ' \
+                         'Fav_Usr_Stk_Name FROM {}.{}.FAV_USER_STK_SYMBOL_DETAILS ' \
+                         'WHERE Fav_Usr_Stk_User_ID={} ;'.format(db_name, db_schema, user_id)
             _sql1 = pd.read_sql_query(_selectqry, db_connection)
-            if (_sql1.shape[0] > 0):
-                print(tabulate(_sql1, headers='keys', tablefmt="psql"))
-            else:
-                print('No Rows Selected !!!')
         except:
             print('Enter Valid User-ID !!!')
+
+        if (_sql1.shape[0] > 0 and _what_mode =='display'):
+            return(_sql1)
+        elif (_sql1.shape[0] > 0 and _what_mode == 'getsymbol'):
+            return(_sql1['Fav_Usr_Stk_Symbol'])
+        else:
+            print('No Rows Selected !!!')
+
+    def insert_fav_usr_stk_sym(self, idx, tsym, tname, usrid):
+        _index = idx
+        _tick_sym = tsym
+        _tick_name = tname
+        user_id = usrid
+        _curr_date_time = dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+        try:
+            _insertqry = "INSERT INTO {}.{}.FAV_USER_STK_SYMBOL_DETAILS " \
+                         "VALUES ({},'{}', '{}', {}, '{}')".format(db_name, db_schema, _index, _tick_sym,
+                                                                    _tick_name, user_id, _curr_date_time)
+            db_cursor.execute(_insertqry)
+        except:
+            print('SQL Error while inserting rows from FAV_USER_STK_SYMBOL_DETAILS table !!!')
+
+    def delete_fav_usr_stk_sym(self, tsym):
+        _tick_sym = tsym
+        try:
+            _deleteqry = "DELETE FROM {}.{}.FAV_USER_STK_SYMBOL_DETAILS " \
+                         "WHERE Fav_Usr_Stk_Sym_ID = {}".format(db_name, db_schema, _tick_sym)
+            db_cursor.execute(_deleteqry)
+        except:
+            print('SQL Error while deleting row from FAV_USER_STK_SYMBOL_DETAILS table !!!')
+
+    def close_fav_usr_stk_sym(self):
+        try:
+            db_cursor.close()
+        except:
+            print('SQL Error while closing FAV_USER_STK_SYMBOL_DETAILS table !!!')
+
+class HandleFavStkLivePriceTable:
+    def __init__(self):
+        global db_name, db_schema, user_id
+
+    def select_fav_stk_live_price(self, usrid):
+        user_id = usrid
+        try:
+            _selectqry = "SELECT * FROM {}.{}.FAV_STK_LIVE_PRICE_DETAILS " \
+                         "WHERE Fav_Stk_Live_User_ID = '{}' ORDER BY Fav_Stk_Live_User_ID ASC, " \
+                         "Fav_Stk_Live_Symbol ASC, Fav_Stk_Live_Upd_Tmsp DESC ;".format(db_name, db_schema, user_id)
+            _sql1 = pd.read_sql_query(_selectqry, db_connection)
+            return(_sql1)
+        except:
+            print('error Enter Valid Stock-Symbol-ID !!!')
+
+    def insert_fav_stk_live_price(self, usrid, symb, price):
+        user_id = usrid
+        _tick_sym = symb
+        _tick_price = float(price)
+        _curr_date_time = dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+        try:
+            _insertqry = "INSERT INTO {}.{}.FAV_STK_LIVE_PRICE_DETAILS " \
+                         "VALUES ({},'{}', {}, '{}')".format(db_name, db_schema, user_id, _tick_sym, _tick_price,
+                                                             _curr_date_time)
+            db_cursor.execute(_insertqry)
+        except:
+            print('SQL Error while inserting rows from FAV_STK_LIVE_PRICE_DETAILS table !!!')
+
+class HandleFavStkNewsTable:
+    def __init__(self):
+        global db_name, db_schema, user_id
+
+    def get_live_stock_news(self, stock_symbols):
+        _parsed_news = []
+        _finwiz_url = 'https://finviz.com/quote.ashx?t='
+        for stock_symbol in stock_symbols:
+            _news_tables = {}
+            _stock_symbol = stock_symbol.upper()
+
+            _url = _finwiz_url + stock_symbol
+            _req = Request(url=_url, headers={'user-agent': 'my-app/0.0.1'})
+            _resp = urlopen(_req)
+            _html = BeautifulSoup(_resp, features="lxml")
+            _news_table = _html.find(id='news-table')
+            _news_tables[stock_symbol] = _news_table
+
+            # Iterate through the news
+            for file_name, news_table in _news_tables.items():
+                for x in news_table.findAll('tr'):
+                    _text = x.a.get_text()
+                    _date_scrape = x.td.text.split()
+                    if len(_date_scrape) == 1:
+                        _time = _date_scrape[0]
+                    else:
+                        _date = _date_scrape[0]
+                        _time = _date_scrape[1]
+
+                    ticker = file_name.split('_')[0]
+                    _parsed_news.append([ticker, _date, _time, _text])
+
+        _columns = ['Ticker', 'Date', 'Time', 'Headline']
+        _news = pd.DataFrame(_parsed_news, columns=_columns)
+        return(_news)
+
+    def insert_fav_stk_news(self, usrid, symb, news):
+        user_id = usrid
+        _tick_sym = symb
+        _tick_news = news[:300]
+        _curr_date_time = dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+        try:
+            _insertqry = "INSERT INTO {}.{}.FAV_STK_NEWS_DETAILS " \
+                         "VALUES ({},'{}', {}, '{}')".format(db_name, db_schema, user_id, _tick_sym, _tick_news,
+                                                             _curr_date_time)
+            db_cursor.execute(_insertqry)
+        except:
+            print('SQL Error while inserting rows from FAV_STK_NEWS_DETAILS table !!!')
 
 
 if __name__ == '__main__':
@@ -105,14 +251,21 @@ if __name__ == '__main__':
     db_cursor = None
     db_name = 'StockMonitor'
     db_schema = 'Stock'
-    db_user_id = ''
+    user_id = 1
+
+    finviz_url = 'https://finviz.com/quote.ashx?t='
+    news_tables = {}
 
     option_dict = {
         0: "Exit from the Application",
         1: "Refresh the Stock Symbols",
         2: "List User Favourite's Stocks",
-        3: "Change User Favourite's Stocks"
+        3: "Change User Favourite's Stocks",
+        4: "Get the Current Price and Live News"
     }
+
+    # Validations Class
+    getconv = GetConvertID()
 
     # Establish the Connections with Database
     handle_db = HandleDataBaseOperations()
@@ -139,48 +292,78 @@ if __name__ == '__main__':
                 print('\r' + str_print[:k], end='')
                 time.sleep(.05)
             print('\r', end='')
-            stock_symbol.insert_stk_sym(load_symbol_df)
+            stock_symbol.insert_stk_sym_df(load_symbol_df)
             handle_db.commit_database()
             str_print = 'STK_SYMBOL_DETAILS Loaded Successfully!'
             for k in range(50):
                 print('\r' + str_print[:k], end='')
                 time.sleep(.05)
             print('\n')
-            stock_symbol = None
+            stock_symbol.close_stk_sym()
 
         elif option == '2':
             # These statements below list User Favourite's Stocks
-            db_user_id = input('Enter User ID: ')
-            if db_user_id.isnumeric():
-                db_user_id = int(db_user_id)
-                fav_usr_stk_sym = HandleFavUsrStkSymTable()
-                fav_usr_stk_sym.select_fav_usr_stk_sym()
-            else:
-                print('Enter Valid User-ID !!!')
+            user_id = getconv.get_conv_val_id('user')
+            _fav_usr_stk_sym = HandleFavUsrStkSymTable()
+            _fav_usr_stK_sym_df = _fav_usr_stk_sym.select_fav_usr_stk_sym(user_id, 'display')
+            print(tabulate(_fav_usr_stK_sym_df, headers='keys', tablefmt="psql"))
+            _fav_usr_stk_sym.close_fav_usr_stk_sym()
 
         elif option == '3':
             #These statements below updates User Favourite's Stocks
-            db_user_id = input('Enter User ID: ')
-            if db_user_id.isnumeric():
-                db_user_id = int(db_user_id)
+            user_id = getconv.get_conv_val_id('user')
+
             chg_fav = input("Do You want to Add your Favourite's (Y/N): ").upper()
             if chg_fav == 'Y':
-                fav_stk_sym = input('Enter Favourite Stock Symbol: ').upper()
-                stock_symbol = HandleStockSymbolTable()
-                if (stock_symbol.select_stk_sym(fav_stk_sym) > 0):
-                    print('Stock Present')
-                else:
-                    print('Stock Not Present')
+                while True:
+                    fav_stk_sym = input('Enter Favourite Stock Symbol: ').upper()
+                    stock_symbol = HandleStockSymbolTable()
+                    ret_cd, sym_id, sym_symbol, sym_name = stock_symbol.select_stk_sym(fav_stk_sym)
+                    ret_cd = int(ret_cd)
+                    if (ret_cd > 0):
+                        sym_id = int(sym_id)
+                        sym_symbol = str(sym_symbol).split()[1]
+                        sym_name = str(sym_name)[5:].split('Name:')[0]
+                        stock_symbol = HandleFavUsrStkSymTable()
+                        stock_symbol.insert_fav_usr_stk_sym(sym_id, sym_symbol, sym_name, user_id)
+                        handle_db.commit_database()
+                        stock_symbol.close_fav_usr_stk_sym()
+                        break
+                    else:
+                        print('Stock Not Present. Enter the valid stock symbol !!!')
 
             chg_fav = input("Do You want to Delete your Favourite's (Y/N): ").upper()
             if chg_fav == 'Y':
-                fav_stk_sym = input('Enter Favourite Stock Symbol: ').upper()
-                stock_symbol = HandleStockSymbolTable()
-                if (stock_symbol.select_stk_sym(fav_stk_sym) > 0):
-                    print('Stock Present')
-                else:
-                    print('Stock Not Present')
+                fav_stk_sym_id = getconv.get_conv_val_id('symbol')
+                fav_usr_stk_sym = HandleFavUsrStkSymTable()
+                fav_usr_stk_sym.delete_fav_usr_stk_sym(fav_stk_sym_id)
+                handle_db.commit_database()
+                fav_usr_stk_sym.close_fav_usr_stk_sym()
+
+        elif option == '4':
+            #These statements below updates User Favourite's Stocks
+            user_id = getconv.get_conv_val_id('user')
+
+            _fav_usr_stk_sym = HandleFavUsrStkSymTable()
+            _fav_stk_live_price = HandleFavStkLivePriceTable()
+            _fav_stk_news = HandleFavStkNewsTable()
+            _stk_live_price = StockLivePrice()
+
+            _fav_usr_stK_sym_list = list(_fav_usr_stk_sym.select_fav_usr_stk_sym(user_id, 'getsymbol'))
+            for sym_list in _fav_usr_stK_sym_list:
+                _sym_price = _stk_live_price.liveprice(sym_list)
+                _fav_stk_live_price.insert_fav_stk_live_price(user_id, sym_list, _sym_price)
+                handle_db.commit_database()
+
+            live_price_df = _fav_stk_live_price.select_fav_stk_live_price(user_id)
+            print(tabulate(live_price_df, headers='keys', tablefmt="psql"))
+
+            print(_fav_stk_news.get_live_stock_news(_fav_usr_stK_sym_list))
+
+
+
+            _fav_usr_stk_sym.close_fav_usr_stk_sym()
+
 
         else:
             print('An Invalid Option. Try Valid Option !!!')
-
