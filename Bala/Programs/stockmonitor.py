@@ -5,12 +5,14 @@ import pandas as pd
 import datetime as dt
 
 from tabulate import tabulate
+from datetime import datetime
 from yahoo_fin import stock_info as si
 from urllib.request import urlopen
 from urllib.request import Request
 from bs4 import BeautifulSoup
+from emailgmail import SendEmail
 
-class GetConvertID:
+class GetRequDetails:
     def __init__(self):
         pass
 
@@ -31,13 +33,66 @@ class GetConvertID:
             else:
                 print('Enter Valid ID !!!')
 
+    def get_live_stock_news(self, stock_symbols, maxnews):
+        _parsed_news = []
+        _finviz_url = 'https://finviz.com/quote.ashx?t='
+        _max_news = maxnews
+
+        for stock_symbol in stock_symbols:
+            _news_tables = {}
+            _stock_symbol = stock_symbol.upper()
+
+            _url = _finviz_url + stock_symbol
+            _req = Request(url=_url, headers={'user-agent': 'my-app/0.0.1'})
+            _resp = urlopen(_req)
+            _html = BeautifulSoup(_resp, features="lxml")
+            _news_table = _html.find(id='news-table')
+            _news_tables[stock_symbol] = _news_table
+
+            # Iterate through the news
+            _incre = 1
+            for file_name, news_table in _news_tables.items():
+                for x in news_table.findAll('tr'):
+                    _text = x.a.get_text()
+                    _date_scrape = x.td.text.split()
+                    if len(_date_scrape) == 1:
+                        _time = _date_scrape[0]
+                    else:
+                        _date = _date_scrape[0]
+                        _time = _date_scrape[1]
+
+                    ticker = file_name.split('_')[0]
+                    _parsed_news.append([ticker, _date, _time, _text[:300]])
+                    _incre += 1
+                    if _incre > _max_news:
+                        break
+
+        _columns = ['Ticker', 'Date', 'Time', 'Headline']
+        _news = pd.DataFrame(_parsed_news, columns=_columns)
+        return(_news)
+
 class StockLivePrice:
     def __init__(self):
         pass
 
     def liveprice(self, stksymname):
         _stk_sym_name = stksymname
-        return(si.get_live_price(_stk_sym_name))
+        return(float(si.get_live_price(_stk_sym_name)))
+
+    def opendata(self, stksymname):
+        _stk_sym_name = stksymname
+        _today = dt.date.today()
+        _open_df = pd.DataFrame(si.get_data(_stk_sym_name, start_date=_today))
+        return(float(_open_df['open']))
+
+    def closedata(self, stksymname):
+        _stk_sym_name = stksymname
+        _today = dt.date.today()
+        _yesterday = _today - dt.timedelta(days=1)
+        _close_df = pd.DataFrame(si.get_data(_stk_sym_name, start_date=_yesterday))
+        for cdate, cprice in _close_df['close'].items():
+            if str(cdate)[:10] == str(_yesterday):
+                return(cprice)
 
 class LoadSymbolDataFrame:
     def __init__(self):
@@ -77,6 +132,21 @@ class HandleDataBaseOperations:
         except Exception:
             print('COMMIT Failed !!!')
 
+class HandleUserDetailsTable:
+    def __init__(self):
+        global db_name, db_schema, user_id
+
+    def select_user_email(self, usrid):
+        user_id = int(usrid)
+        try:
+            _selectqry = "SELECT Stk_User_Email_ID FROM {}.{}.Stock.STK_USER_DETAILS " \
+                         "WHERE Stk_User_ID = {} ;".format(db_name, db_schema, user_id)
+            _sql1 = pd.read_sql_query(_selectqry, db_connection)
+            return(str(_sql1['Stk_User_Email_ID'].values))
+        except:
+            print('error Enter Valid Stock-Symbol-ID !!!')
+
+
 class HandleStockSymbolTable:
     def __init__(self):
         global db_name, db_schema
@@ -110,18 +180,12 @@ class HandleStockSymbolTable:
         except:
             print('SQL Error while inserting rows from STK_SYMBOL_DETAILS table !!!')
 
-    def close_stk_sym(self):
-        try:
-            db_cursor.close()
-        except:
-            print('SQL Error while closing STK_SYMBOL_DETAILS table !!!')
-
 class HandleFavUsrStkSymTable:
     def __init__(self):
         global db_name, db_schema, user_id
 
     def select_fav_usr_stk_sym(self, usrid, mode):
-        user_id = usrid
+        user_id = int(usrid)
         _what_mode = mode
         try:
             _selectqry = 'SELECT Fav_Usr_Stk_Sym_ID, Fav_Usr_Stk_Symbol, ' \
@@ -138,41 +202,35 @@ class HandleFavUsrStkSymTable:
         else:
             print('No Rows Selected !!!')
 
-    def insert_fav_usr_stk_sym(self, idx, tsym, tname, usrid):
-        _index = idx
-        _tick_sym = tsym
-        _tick_name = tname
-        user_id = usrid
+    def insert_fav_usr_stk_sym(self, symid, tsym, tname, usrid):
+        _sym_id = int(symid)
+        _sym_sym = tsym
+        _sym_name = tname
+        user_id = int(usrid)
         _curr_date_time = dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
         try:
             _insertqry = "INSERT INTO {}.{}.FAV_USER_STK_SYMBOL_DETAILS " \
-                         "VALUES ({},'{}', '{}', {}, '{}')".format(db_name, db_schema, _index, _tick_sym,
-                                                                    _tick_name, user_id, _curr_date_time)
+                         "VALUES ({},'{}','{}',{},'{}')".format(db_name, db_schema, _sym_id, _sym_sym,
+                                                                _sym_name, user_id, _curr_date_time)
             db_cursor.execute(_insertqry)
         except:
             print('SQL Error while inserting rows from FAV_USER_STK_SYMBOL_DETAILS table !!!')
 
     def delete_fav_usr_stk_sym(self, tsym):
-        _tick_sym = tsym
+        _tick_sym = str(tsym)
         try:
             _deleteqry = "DELETE FROM {}.{}.FAV_USER_STK_SYMBOL_DETAILS " \
-                         "WHERE Fav_Usr_Stk_Sym_ID = {}".format(db_name, db_schema, _tick_sym)
+                         "WHERE Fav_Usr_Stk_Symbol = '{}'; ".format(db_name, db_schema, _tick_sym)
             db_cursor.execute(_deleteqry)
         except:
             print('SQL Error while deleting row from FAV_USER_STK_SYMBOL_DETAILS table !!!')
-
-    def close_fav_usr_stk_sym(self):
-        try:
-            db_cursor.close()
-        except:
-            print('SQL Error while closing FAV_USER_STK_SYMBOL_DETAILS table !!!')
 
 class HandleFavStkLivePriceTable:
     def __init__(self):
         global db_name, db_schema, user_id
 
     def select_fav_stk_live_price(self, usrid):
-        user_id = usrid
+        user_id = int(usrid)
         try:
             _selectqry = "SELECT * FROM {}.{}.FAV_STK_LIVE_PRICE_DETAILS " \
                          "WHERE Fav_Stk_Live_User_ID = '{}' ORDER BY Fav_Stk_Live_User_ID ASC, " \
@@ -183,7 +241,7 @@ class HandleFavStkLivePriceTable:
             print('error Enter Valid Stock-Symbol-ID !!!')
 
     def insert_fav_stk_live_price(self, usrid, symb, price):
-        user_id = usrid
+        user_id = int(usrid)
         _tick_sym = symb
         _tick_price = float(price)
         _curr_date_time = dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
@@ -199,50 +257,120 @@ class HandleFavStkNewsTable:
     def __init__(self):
         global db_name, db_schema, user_id
 
-    def get_live_stock_news(self, stock_symbols):
-        _parsed_news = []
-        _finwiz_url = 'https://finviz.com/quote.ashx?t='
-        for stock_symbol in stock_symbols:
-            _news_tables = {}
-            _stock_symbol = stock_symbol.upper()
+    def select_fav_stk_news(self, usrid, symid):
+        user_id = int(usrid)
+        try:
+            _selectqry = "SELECT TOP (2) Fav_Stk_News_Details FROM {}.{}.FAV_STK_NEWS_DETAILS " \
+                         "WHERE Fav_Stk_News_User_ID = {} AND Fav_Stk_News_Symbol = '{}' "  \
+                         "ORDER BY Fav_Stk_News_User_ID ASC, " \
+                         "Fav_Stk_News_Symbol ASC, Fav_Stk_News_Upd_Tmsp DESC ;".\
+                         format(db_name, db_schema, user_id, symid)
+            _sql1 = pd.read_sql_query(_selectqry, db_connection)
+            return(_sql1)
+        except:
+            print('error Enter Valid Stock-Symbol-ID !!!')
 
-            _url = _finwiz_url + stock_symbol
-            _req = Request(url=_url, headers={'user-agent': 'my-app/0.0.1'})
-            _resp = urlopen(_req)
-            _html = BeautifulSoup(_resp, features="lxml")
-            _news_table = _html.find(id='news-table')
-            _news_tables[stock_symbol] = _news_table
-
-            # Iterate through the news
-            for file_name, news_table in _news_tables.items():
-                for x in news_table.findAll('tr'):
-                    _text = x.a.get_text()
-                    _date_scrape = x.td.text.split()
-                    if len(_date_scrape) == 1:
-                        _time = _date_scrape[0]
-                    else:
-                        _date = _date_scrape[0]
-                        _time = _date_scrape[1]
-
-                    ticker = file_name.split('_')[0]
-                    _parsed_news.append([ticker, _date, _time, _text])
-
-        _columns = ['Ticker', 'Date', 'Time', 'Headline']
-        _news = pd.DataFrame(_parsed_news, columns=_columns)
-        return(_news)
-
-    def insert_fav_stk_news(self, usrid, symb, news):
-        user_id = usrid
-        _tick_sym = symb
-        _tick_news = news[:300]
+    def insert_fav_stk_news(self, tusrid, tsym, tdate, ttime, tdetails):
+        user_id = int(tusrid)
+        _tick_sym = tsym
+        _tick_date = tdate
+        _tick_time = ttime
+        _tick_details = tdetails[:300]
         _curr_date_time = dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
         try:
             _insertqry = "INSERT INTO {}.{}.FAV_STK_NEWS_DETAILS " \
-                         "VALUES ({},'{}', {}, '{}')".format(db_name, db_schema, user_id, _tick_sym, _tick_news,
-                                                             _curr_date_time)
+                         "VALUES ({},'{}','{}','{}','{}','{}')".format(db_name,db_schema,user_id,_tick_sym,_tick_date,
+                                                                       _tick_time, _tick_details, _curr_date_time)
             db_cursor.execute(_insertqry)
         except:
             print('SQL Error while inserting rows from FAV_STK_NEWS_DETAILS table !!!')
+
+class HandleFavStkTrendTable:
+    def __init__(self):
+        global db_name, db_schema, user_id
+
+    def insert_fav_stk_trend(self, tusrid, tsym, tprevprice, tprevnews, tcurrprice, tcurrnews, ttrendana):
+        user_id = int(tusrid)
+        _curr_date_time = dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+        try:
+            _insertqry = "INSERT INTO {}.{}.FAV_STK_TREND_DETAILS " \
+                         "VALUES ({},'{}',{},'{}',{},'{}',{},'{}')".format(db_name,db_schema,user_id,tsym,tprevprice,
+                                                                           tprevnews, tcurrprice,tcurrnews,
+                                                                           ttrendana, _curr_date_time)
+            db_cursor.execute(_insertqry)
+        except:
+            print('SQL Error while inserting rows from FAV_STK_TREND_DETAILS table !!!')
+
+    def select_fav_stk_trend(self, usrid, symid):
+        user_id = int(usrid)
+        try:
+            _selectqry = "SELECT TOP (1) Fav_Stk_Trend_Curr_Price FROM {}.{}.FAV_STK_TREND_DETAILS " \
+                         "WHERE Fav_Stk_Trend_User_ID = {} AND Fav_Stk_Trend_Symbol = '{}' "  \
+                         "ORDER BY Fav_Stk_Trend_Upd_Tmsp DESC;".\
+                         format(db_name, db_schema, user_id, symid)
+            _sql1 = pd.read_sql_query(_selectqry, db_connection)
+            return(float(_sql1['Fav_Stk_Trend_Curr_Price'].values))
+        except:
+            print('error Enter Valid Stock-Symbol-ID !!!')
+
+    def select_fav_stk_trend_analy(self, usrid, symid):
+        user_id = int(usrid)
+        try:
+            _selectqry = "SELECT TOP (1) Fav_Stk_Trend_Analysis FROM {}.{}.FAV_STK_TREND_DETAILS " \
+                         "WHERE Fav_Stk_Trend_User_ID = {} AND Fav_Stk_Trend_Symbol = '{}' "  \
+                         "ORDER BY Fav_Stk_Trend_Upd_Tmsp DESC;".\
+                         format(db_name, db_schema, user_id, symid)
+            _sql1 = pd.read_sql_query(_selectqry, db_connection)
+            return(int(_sql1['Fav_Stk_Trend_Analysis'].values))
+        except:
+            print('error Enter Valid Stock-Symbol-ID !!!')
+
+
+def Handle_Stock_Monitor():
+
+    user_id = getconv.get_conv_val_id('user')
+    _fav_usr_stk_sym_list = list(_fav_usr_stk_sym.select_fav_usr_stk_sym(user_id, 'getsymbol'))
+    for sym_list in _fav_usr_stk_sym_list:
+        _prev_stk_price = _fav_stk_trend.select_fav_stk_trend(user_id, sym_list)
+        _curr_stk_price = _stk_live_price.liveprice(sym_list)
+        _news_df = _fav_stk_news.get_live_stock_news(_fav_usr_stk_sym_list, 1)
+        for index, rows in _news_df.iterrows():
+            _rows_list = list(rows.values)
+            _nsym = str(_rows_list[0])
+            _ndate = str(datetime.strptime(_rows_list[1], "%b-%d-%y")).split(' ')[0]
+            _ntime = str(_rows_list[2][:5] + millsec)
+            _ndetails = str(_rows_list[3][:300].replace("'", ""))
+            _fav_stk_curr_news.insert_fav_stk_news(user_id, _nsym, _ndate, _ntime, _ndetails)
+            handle_db.commit_database()
+        _sym_price = _stk_live_price.liveprice(sym_list)
+        _fav_stk_live_price.insert_fav_stk_live_price(user_id, sym_list, _sym_price)
+        handle_db.commit_database()
+
+    _trend_analy = 0
+    if _curr_stk_price > _prev_stk_price:
+        _trend_analy += 1
+    else:
+        _trend_analy -= 1
+
+    _news_cnt = 1
+    for sym_list in _fav_usr_stk_sym_list:
+        _top2_news_df = _fav_stk_curr_news.select_fav_stk_news(user_id, sym_list)
+        while True:
+            for nhead, nnews in _top2_news_df.iterrows():
+                if _news_cnt == 1:
+                    _curr_news = str(nnews[:300])
+                    _news_cnt += 1
+                else:
+                    _prev_news = str(nnews[:300])
+                    _news_cnt = 1
+            break
+        _curr_price = _stk_live_price.opendata(sym_list)
+        _prev_price = _stk_live_price.closedata(sym_list)
+        _prev_news = _prev_news[24:]
+        _curr_news = _curr_news[24:]
+        _fav_stk_trend.insert_fav_stk_trend(user_id, sym_list, _prev_price, _prev_news,
+                                            _curr_price, _curr_news, _trend_analy)
+        handle_db.commit_database()
 
 
 if __name__ == '__main__':
@@ -252,24 +380,34 @@ if __name__ == '__main__':
     db_name = 'StockMonitor'
     db_schema = 'Stock'
     user_id = 1
-
-    finviz_url = 'https://finviz.com/quote.ashx?t='
-    news_tables = {}
+    millsec = ':00.0000000'
 
     option_dict = {
         0: "Exit from the Application",
         1: "Refresh the Stock Symbols",
         2: "List User Favourite's Stocks",
         3: "Change User Favourite's Stocks",
-        4: "Get the Current Price and Live News"
+        4: "Load the Latest Values",
+        5: "Start Monitoring the Favourite's Stocks"
     }
 
     # Validations Class
-    getconv = GetConvertID()
+    getconv = GetRequDetails()
 
     # Establish the Connections with Database
     handle_db = HandleDataBaseOperations()
     handle_db.establish_db_connection()
+
+    _user_details = HandleUserDetailsTable()
+    _load_symbol = LoadSymbolDataFrame()
+    _stock_symbol = HandleStockSymbolTable()
+    _fav_usr_stk_sym = HandleFavUsrStkSymTable()
+    _fav_stk_live_price = HandleFavStkLivePriceTable()
+    _fav_stk_news = GetRequDetails()
+    _stk_live_price = StockLivePrice()
+    _fav_stk_curr_news = HandleFavStkNewsTable()
+    _fav_stk_trend = HandleFavStkTrendTable()
+    _send_email_to =SendEmail()
 
     while True:
         print("Select an Option: ")
@@ -281,33 +419,29 @@ if __name__ == '__main__':
 
         elif option == '1':
             # These statements below loads the latest stock in to a STK_SYMBOL_DETAILS
-            load_symbol = LoadSymbolDataFrame()
-            load_symbol_df = load_symbol.load_sym_table()
 
-            stock_symbol = HandleStockSymbolTable()
-            stock_symbol.delete_stk_sym()
+            load_symbol_df = _load_symbol.load_sym_table()
+            _stock_symbol.delete_stk_sym()
 
             str_print = 'STK_SYMBOL_DETAILS Refresh In-Progress ...'
             for k in range(50):
                 print('\r' + str_print[:k], end='')
                 time.sleep(.05)
             print('\r', end='')
-            stock_symbol.insert_stk_sym_df(load_symbol_df)
+            _stock_symbol.insert_stk_sym_df(load_symbol_df)
             handle_db.commit_database()
             str_print = 'STK_SYMBOL_DETAILS Loaded Successfully!'
             for k in range(50):
                 print('\r' + str_print[:k], end='')
                 time.sleep(.05)
             print('\n')
-            stock_symbol.close_stk_sym()
 
         elif option == '2':
             # These statements below list User Favourite's Stocks
             user_id = getconv.get_conv_val_id('user')
-            _fav_usr_stk_sym = HandleFavUsrStkSymTable()
+
             _fav_usr_stK_sym_df = _fav_usr_stk_sym.select_fav_usr_stk_sym(user_id, 'display')
             print(tabulate(_fav_usr_stK_sym_df, headers='keys', tablefmt="psql"))
-            _fav_usr_stk_sym.close_fav_usr_stk_sym()
 
         elif option == '3':
             #These statements below updates User Favourite's Stocks
@@ -317,53 +451,92 @@ if __name__ == '__main__':
             if chg_fav == 'Y':
                 while True:
                     fav_stk_sym = input('Enter Favourite Stock Symbol: ').upper()
-                    stock_symbol = HandleStockSymbolTable()
-                    ret_cd, sym_id, sym_symbol, sym_name = stock_symbol.select_stk_sym(fav_stk_sym)
+
+                    ret_cd, sym_id, sym_symbol, sym_name = _stock_symbol.select_stk_sym(fav_stk_sym)
                     ret_cd = int(ret_cd)
                     if (ret_cd > 0):
                         sym_id = int(sym_id)
                         sym_symbol = str(sym_symbol).split()[1]
                         sym_name = str(sym_name)[5:].split('Name:')[0]
-                        stock_symbol = HandleFavUsrStkSymTable()
-                        stock_symbol.insert_fav_usr_stk_sym(sym_id, sym_symbol, sym_name, user_id)
+                        _stock_symbol.insert_fav_usr_stk_sym(sym_id, sym_symbol, sym_name, user_id)
                         handle_db.commit_database()
-                        stock_symbol.close_fav_usr_stk_sym()
                         break
                     else:
                         print('Stock Not Present. Enter the valid stock symbol !!!')
 
             chg_fav = input("Do You want to Delete your Favourite's (Y/N): ").upper()
             if chg_fav == 'Y':
-                fav_stk_sym_id = getconv.get_conv_val_id('symbol')
+                fav_stk_sym = input('Enter Favourite Stock Symbol: ').upper()
                 fav_usr_stk_sym = HandleFavUsrStkSymTable()
-                fav_usr_stk_sym.delete_fav_usr_stk_sym(fav_stk_sym_id)
+                fav_usr_stk_sym.delete_fav_usr_stk_sym(fav_stk_sym)
                 handle_db.commit_database()
-                fav_usr_stk_sym.close_fav_usr_stk_sym()
 
         elif option == '4':
-            #These statements below updates User Favourite's Stocks
             user_id = getconv.get_conv_val_id('user')
 
-            _fav_usr_stk_sym = HandleFavUsrStkSymTable()
-            _fav_stk_live_price = HandleFavStkLivePriceTable()
-            _fav_stk_news = HandleFavStkNewsTable()
-            _stk_live_price = StockLivePrice()
-
-            _fav_usr_stK_sym_list = list(_fav_usr_stk_sym.select_fav_usr_stk_sym(user_id, 'getsymbol'))
-            for sym_list in _fav_usr_stK_sym_list:
+            _fav_usr_stk_sym_list = list(_fav_usr_stk_sym.select_fav_usr_stk_sym(user_id, 'getsymbol'))
+            for sym_list in _fav_usr_stk_sym_list:
                 _sym_price = _stk_live_price.liveprice(sym_list)
                 _fav_stk_live_price.insert_fav_stk_live_price(user_id, sym_list, _sym_price)
                 handle_db.commit_database()
 
             live_price_df = _fav_stk_live_price.select_fav_stk_live_price(user_id)
-            print(tabulate(live_price_df, headers='keys', tablefmt="psql"))
+            # print(tabulate(live_price_df, headers='keys', tablefmt="psql"))
 
-            print(_fav_stk_news.get_live_stock_news(_fav_usr_stK_sym_list))
+            _news_df = _fav_stk_news.get_live_stock_news(_fav_usr_stk_sym_list, 3)
+            # print(_news_df)
 
+            for index, rows in _news_df.iterrows():
+                _rows_list = list(rows.values)
+                _nsym = str(_rows_list[0])
+                _ndate = str(datetime.strptime(_rows_list[1], "%b-%d-%y")).split(' ')[0]
+                _ntime = str(_rows_list[2][:5] + millsec)
+                _ndetails = str(_rows_list[3][:300].replace("'", ""))
+                _fav_stk_curr_news.insert_fav_stk_news(user_id,_nsym,_ndate,_ntime,_ndetails)
+                handle_db.commit_database()
 
+            _news_cnt = 1
+            for sym_list in _fav_usr_stk_sym_list:
+                _top2_news_df = _fav_stk_curr_news.select_fav_stk_news(user_id, sym_list)
+                while True:
+                    for nhead, nnews in _top2_news_df.iterrows():
+                        if _news_cnt == 1:
+                            _curr_news = str(nnews[:300])
+                            _news_cnt += 1
+                        else:
+                            _prev_news =str(nnews[:300])
+                            _news_cnt = 1
+                    break
+                _curr_price = _stk_live_price.opendata(sym_list)
+                _prev_price = _stk_live_price.closedata(sym_list)
+                _prev_news = _prev_news[24:]
+                _curr_news = _curr_news[24:]
+                _trend_ana = 0
+                _fav_stk_trend.insert_fav_stk_trend(user_id, sym_list, _prev_price, _prev_news,
+                                                    _curr_price, _curr_news, _trend_ana)
+                handle_db.commit_database()
 
-            _fav_usr_stk_sym.close_fav_usr_stk_sym()
-
+        elif option == '5':
+            dtime_now = datetime.now()
+            current_time = dtime_now.strftime("%H:%M:%S")
+            while True:
+                if current_time <= '16:29:59':
+                    time.sleep(600)
+                    Handle_Stock_Monitor()
+                    time.sleep(600)
+                    _fav_usr_stk_sym_list = list(_fav_usr_stk_sym.select_fav_usr_stk_sym(user_id, 'getsymbol'))
+                    for sym_list in _fav_usr_stk_sym_list:
+                        _trend_analyze = _fav_stk_trend.select_fav_stk_trend_analy(user_id, sym_list)
+                        if _trend_analyze == 2:
+                            _sub = 'Reg: Your Latest Stock Infomation'
+                            _emailadd = _user_details.select_user_email(user_id)
+                            _curr_stkk_price = _stk_live_price.liveprice(sym_list)
+                            _txt = 'Symbol: {} Price is increased. Current Value={}'.format(sym_list, _curr_stkk_price)
+                            _send_email_to.sendemail(_sub, _emailadd, _txt)
+                    break
+                else:
+                    print('Stock Market Closed')
+                    break
 
         else:
             print('An Invalid Option. Try Valid Option !!!')

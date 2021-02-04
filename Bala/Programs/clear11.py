@@ -1,25 +1,12 @@
-# import only system from os
-import os
-from time import sleep
+from datetime import datetime
 
+now = datetime.now()
 
+print(now)
+current_time = now.strftime("%H:%M:%S")
+print("Current Time =", current_time)
 
-# print out some text
-print('hello geeks\n'*10)
-
-# sleep for 2 seconds after printing output
-sleep(1)
-
-
-print(os.name)
-# now call function we defined above
-os.system('cls' if os.name == 'nt' else 'clear')
-
-
-import sys
-sys.stderr.write("\x1b[2J\x1b[H")
-
-print("\033c")
-
-
-print ('\n' * 100)
+if current_time <= '22:28:59':
+    print('yes')
+else:
+    print('no')
