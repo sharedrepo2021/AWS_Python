@@ -13,6 +13,7 @@ class Addressbook:
         self.cursor = None
         self.sqlquery = ''
 
+    @staticmethod
     def display_header(self):
         print('\n================================================')
         print('|            Select Your Option                |')
@@ -45,6 +46,9 @@ class Addressbook:
     def select_addrbook(self, query):
         try:
             self.sqlquery = query
+            print(self.sqlquery)
+            self.cursor.execute(self.sqlquery)
+            print('Row Count: ', self.cursor.rowcount)
             df = pd.read_sql_query(self.sqlquery, self.conn)
             return df
         except Exception:
