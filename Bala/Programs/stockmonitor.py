@@ -38,16 +38,16 @@ class GetRequDetails:
         _finviz_url = 'https://finviz.com/quote.ashx?t='
         _max_news = maxnews
 
-        for stock_symbol in stock_symbols:
+        for stock_symbol1 in stock_symbols:
             _news_tables = {}
-            _stock_symbol = stock_symbol.upper()
+            _stock_symbol1 = stock_symbol1.upper()
 
-            _url = _finviz_url + stock_symbol
+            _url = _finviz_url + stock_symbol1
             _req = Request(url=_url, headers={'user-agent': 'my-app/0.0.1'})
             _resp = urlopen(_req)
             _html = BeautifulSoup(_resp, features="lxml")
             _news_table = _html.find(id='news-table')
-            _news_tables[stock_symbol] = _news_table
+            _news_tables[stock_symbol1] = _news_table
 
             # Iterate through the news
             _incre = 1
@@ -118,7 +118,7 @@ class HandleDataBaseOperations:
 
         try:
             db_connection = pyodbc.connect('Driver={SQL Server};'
-                                       'Server=BALALENR7\SQLEXPRESS;'
+                                       'Server=BALALENG50\SQLEXPRESS;'
                                        'Database=StockMonitor;'
                                        'Trusted_Connection=yes;')
 
@@ -136,13 +136,15 @@ class HandleUserDetailsTable:
     def __init__(self):
         global db_name, db_schema, user_id
 
-    def select_user_email(self, usrid):
+    def select_user_details(self, usrid):
         user_id = int(usrid)
         try:
-            _selectqry = "SELECT Stk_User_Email_ID FROM {}.{}.STK_USER_DETAILS " \
+            _selectqry = "SELECT Stk_User_ID, Stk_User_First_Name, " \
+                         "Stk_User_Email_ID, Stk_User_Rights FROM {}.{}.STK_USER_DETAILS " \
                          "WHERE Stk_User_ID = {} ;".format(db_name, db_schema, user_id)
             _sql1 = pd.read_sql_query(_selectqry, db_connection)
-            return(_sql1['Stk_User_Email_ID'].values)
+            return(_sql1.shape[0], _sql1['Stk_User_ID'].values, _sql1['Stk_User_First_Name'].values,
+                   _sql1['Stk_User_Email_ID'].values, _sql1['Stk_User_Rights'].values)
         except:
             print('error Enter Valid Stock-Symbol-ID !!!')
 
@@ -212,6 +214,7 @@ class HandleFavUsrStkSymTable:
             _insertqry = "INSERT INTO {}.{}.FAV_USER_STK_SYMBOL_DETAILS " \
                          "VALUES ({},'{}','{}',{},'{}')".format(db_name, db_schema, _sym_id, _sym_sym,
                                                                 _sym_name, user_id, _curr_date_time)
+            print(_insertqry)
             db_cursor.execute(_insertqry)
         except:
             print('SQL Error while inserting rows from FAV_USER_STK_SYMBOL_DETAILS table !!!')
@@ -463,7 +466,7 @@ if __name__ == '__main__':
                         sym_id = int(sym_id)
                         sym_symbol = str(sym_symbol).split()[1]
                         sym_name = str(sym_name)[5:].split('Name:')[0]
-                        _stock_symbol.insert_fav_usr_stk_sym(sym_id, sym_symbol, sym_name, user_id)
+                        _fav_usr_stk_sym.insert_fav_usr_stk_sym(sym_id, sym_symbol, sym_name, user_id)
                         handle_db.commit_database()
                         break
                     else:
@@ -472,8 +475,7 @@ if __name__ == '__main__':
             chg_fav = input("Do You want to Delete your Favourite's (Y/N): ").upper()
             if chg_fav == 'Y':
                 fav_stk_sym = input('Enter Favourite Stock Symbol: ').upper()
-                fav_usr_stk_sym = HandleFavUsrStkSymTable()
-                fav_usr_stk_sym.delete_fav_usr_stk_sym(fav_stk_sym)
+                _fav_usr_stk_sym.delete_fav_usr_stk_sym(fav_stk_sym)
                 handle_db.commit_database()
 
         elif option == '4':
@@ -523,32 +525,38 @@ if __name__ == '__main__':
 
         elif option == '5':
             user_id = getconv.get_conv_val_id('user')
-            while True:
-                print('going to sleep for 10 secs')
-                dtime_now = datetime.now()
-                current_time = dtime_now.strftime("%H:%M:%S")
-                time.sleep(300)
-                print('slept 10 seconds')
-                Handle_Stock_Monitor()
-                print('after handle stk moni ... sleeping for 10 seconds')
-                time.sleep(300)
-                print('slept 10 seconds')
+            _usr_ret_cd, _usr_id, _usr_fname, _usr_email, _usr_rights = _user_details.select_user_details(user_id)
+            print('return code: ', _usr_ret_cd)
+            print('name: ', _usr_fname)
 
-                _fav_usr_stk_sym_list = list(_fav_usr_stk_sym.select_fav_usr_stk_sym(user_id, 'getsymbol'))
-                for sym_list in _fav_usr_stk_sym_list:
-                    _trend_analyze = _fav_stk_trend.select_fav_stk_trend_analy(user_id, sym_list)
-                    print('inside email part')
-                    print('Symbol name: ', sym_list)
-                    print('Trend analysis: ', _trend_analyze)
-                    if _trend_analyze >= 1:
-                        _sub = 'Reg: Your Latest Stock Information'
-                        _emailadd = _user_details.select_user_email(user_id)
-                        # _curr_stkk_price = _stk_live_price.liveprice(sym_list)
-                        # _txt = 'Symbol: {} Price is increased. Current Value={}'.format(sym_list, _curr_stkk_price)
-                        _send_email_to.sendemail(_sub, _emailadd, email_content)
+            if _usr_ret_cd == 0:
+                pass
+            else:
+                while True:
+                    print('going to sleep for 10 secs')
+                    dtime_now = datetime.now()
+                    current_time = dtime_now.strftime("%H:%M:%S")
+                    time.sleep(30)
+                    print('slept 10 seconds')
+                    Handle_Stock_Monitor()
+                    print('after handle stk moni ... sleeping for 10 seconds')
+                    time.sleep(30)
+                    print('slept 10 seconds')
 
-                if current_time >= '14:05:59':
-                    break
+                    _fav_usr_stk_sym_list = list(_fav_usr_stk_sym.select_fav_usr_stk_sym(user_id, 'getsymbol'))
+                    for sym_list in _fav_usr_stk_sym_list:
+                        _trend_analyze = _fav_stk_trend.select_fav_stk_trend_analy(user_id, sym_list)
+                        print('inside email part')
+                        print('Symbol name: ', sym_list)
+                        print('Trend analysis: ', _trend_analyze)
+                        if _trend_analyze >= 1:
+                            _sub = 'Reg: Your Latest Stock Information'
+                            # _curr_stkk_price = _stk_live_price.liveprice(sym_list)
+                            # _txt = 'Symbol: {} Price is increased. Current Value={}'.format(sym_list, _curr_stkk_price)
+                            _send_email_to.sendemail(_sub, _usr_email, email_content)
+
+                    if current_time >= '14:05:59':
+                        break
 
         else:
             print('An Invalid Option. Try Valid Option !!!')
