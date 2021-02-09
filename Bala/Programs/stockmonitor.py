@@ -10,7 +10,7 @@ from yahoo_fin import stock_info as si
 from urllib.request import urlopen
 from urllib.request import Request
 from bs4 import BeautifulSoup
-from emailgmail import SendEmail
+from emailgmail import Handle_Send_Email
 
 class GetRequDetails:
     def __init__(self):
@@ -118,7 +118,7 @@ class HandleDataBaseOperations:
 
         try:
             db_connection = pyodbc.connect('Driver={SQL Server};'
-                                       'Server=BALALENG50\SQLEXPRESS;'
+                                       'Server=BALALENR7\SQLEXPRESS;'
                                        'Database=StockMonitor;'
                                        'Trusted_Connection=yes;')
 
@@ -134,7 +134,7 @@ class HandleDataBaseOperations:
 
 class HandleUserDetailsTable:
     def __init__(self):
-        global db_name, db_schema, user_id
+        global db_connection, db_name, db_schema, user_id
 
     def select_user_details(self, usrid):
         user_id = int(usrid)
@@ -151,7 +151,7 @@ class HandleUserDetailsTable:
 
 class HandleStockSymbolTable:
     def __init__(self):
-        global db_name, db_schema
+        global db_connection, db_name, db_schema
 
     def delete_stk_sym(self):
         try:
@@ -184,7 +184,7 @@ class HandleStockSymbolTable:
 
 class HandleFavUsrStkSymTable:
     def __init__(self):
-        global db_name, db_schema, user_id
+        global db_connection, db_name, db_schema, user_id
 
     def select_fav_usr_stk_sym(self, usrid, mode):
         user_id = int(usrid)
@@ -230,7 +230,7 @@ class HandleFavUsrStkSymTable:
 
 class HandleFavStkLivePriceTable:
     def __init__(self):
-        global db_name, db_schema, user_id
+        global db_connection, db_name, db_schema, user_id
 
     def select_fav_stk_live_price(self, usrid):
         user_id = int(usrid)
@@ -258,7 +258,7 @@ class HandleFavStkLivePriceTable:
 
 class HandleFavStkNewsTable:
     def __init__(self):
-        global db_name, db_schema, user_id
+        global db_connection, db_name, db_schema, user_id
 
     def select_fav_stk_news(self, usrid, symid):
         user_id = int(usrid)
@@ -290,7 +290,7 @@ class HandleFavStkNewsTable:
 
 class HandleFavStkTrendTable:
     def __init__(self):
-        global db_name, db_schema, user_id
+        global db_connection, db_name, db_schema, user_id
 
     def insert_fav_stk_trend(self, tusrid, tsym, tprevprice, tprevnews, tcurrprice, tcurrnews, ttrendana):
         user_id = int(tusrid)
@@ -330,10 +330,12 @@ class HandleFavStkTrendTable:
 
 
 def Handle_Stock_Monitor():
+    global email_content
+
     _fav_usr_stk_sym_list = list(_fav_usr_stk_sym.select_fav_usr_stk_sym(user_id, 'getsymbol'))
     for sym_list in _fav_usr_stk_sym_list:
         _prev_stk_price = _fav_stk_trend.select_fav_stk_trend(user_id, sym_list)
-        _curr_stk_price = _stk_live_price.liveprice(sym_list)
+        _curr_stk_price = round(_stk_live_price.liveprice(sym_list), 2)
         _news_df = _fav_stk_news.get_live_stock_news(_fav_usr_stk_sym_list, 1)
         for index, rows in _news_df.iterrows():
             _rows_list = list(rows.values)
@@ -369,14 +371,14 @@ def Handle_Stock_Monitor():
                         _prev_news = str(nnews[:300])
                         _news_cnt = 1
                 break
-            _curr_price = _stk_live_price.liveprice(sym_list)
-            _prev_price = _stk_live_price.closedata(sym_list)
+            _trd_curr_price = round(_stk_live_price.liveprice(sym_list), 2)
+            _trd_prev_price = _fav_stk_trend.select_fav_stk_trend(user_id, sym_list)
             _prev_news = _prev_news[24:]
             _curr_news = _curr_news[24:]
             email_content = 'Symbol: {} Price is increased. Previous Value={} Current Value={}' \
-                   ''.format(sym_list, _prev_price, _curr_price)
-            _fav_stk_trend.insert_fav_stk_trend(user_id, sym_list, _prev_price, _prev_news,
-                                                _curr_price, _curr_news, _trend_analy)
+                   ''.format(sym_list, _trd_prev_price, _trd_curr_price)
+            _fav_stk_trend.insert_fav_stk_trend(user_id, sym_list, _trd_prev_price, _prev_news,
+                                                _trd_curr_price, _curr_news, _trend_analy)
             handle_db.commit_database()
 
 
@@ -415,7 +417,7 @@ if __name__ == '__main__':
     _stk_live_price = StockLivePrice()
     _fav_stk_curr_news = HandleFavStkNewsTable()
     _fav_stk_trend = HandleFavStkTrendTable()
-    _send_email_to = SendEmail()
+    _send_email_to = Handle_Send_Email()
 
     while True:
         print("Select an Option: ")
@@ -483,7 +485,7 @@ if __name__ == '__main__':
 
             _fav_usr_stk_sym_list = list(_fav_usr_stk_sym.select_fav_usr_stk_sym(user_id, 'getsymbol'))
             for sym_list in _fav_usr_stk_sym_list:
-                _sym_price = _stk_live_price.liveprice(sym_list)
+                _sym_price = round(_stk_live_price.liveprice(sym_list), 2)
                 _fav_stk_live_price.insert_fav_stk_live_price(user_id, sym_list, _sym_price)
                 handle_db.commit_database()
 
@@ -514,8 +516,8 @@ if __name__ == '__main__':
                             _prev_news =str(nnews[:300])
                             _news_cnt = 1
                     break
-                _curr_price = _stk_live_price.liveprice(sym_list)
-                _prev_price = _stk_live_price.closedata(sym_list)
+                _curr_price = round(_stk_live_price.liveprice(sym_list), 2)
+                _prev_price = _fav_stk_trend.select_fav_stk_trend(user_id, sym_list)
                 _prev_news = _prev_news[24:]
                 _curr_news = _curr_news[24:]
                 _trend_ana = 0
@@ -551,11 +553,9 @@ if __name__ == '__main__':
                         print('Trend analysis: ', _trend_analyze)
                         if _trend_analyze >= 1:
                             _sub = 'Reg: Your Latest Stock Information'
-                            # _curr_stkk_price = _stk_live_price.liveprice(sym_list)
-                            # _txt = 'Symbol: {} Price is increased. Current Value={}'.format(sym_list, _curr_stkk_price)
                             _send_email_to.sendemail(_sub, _usr_email, email_content)
 
-                    if current_time >= '14:05:59':
+                    if current_time >= '11:05:59':
                         break
 
         else:

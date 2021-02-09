@@ -3,13 +3,13 @@ import smtplib
 from email.message import EmailMessage
 
 
-class SendEmail:
+class Handle_Send_Email:
     def __init__(self):
         self.eaddress = os.environ.get('EMAIL_USER')
         self.epassword = os.environ.get('EMAIL_PASS')
         self.sender = 'bala08mur@gmail.com'
 
-    def sendemail(self, subject, receiver, content):
+    def send_email(self, subject, receiver, content):
         msg = EmailMessage()
         msg['Subject'] = subject
         msg['From'] = self.sender
