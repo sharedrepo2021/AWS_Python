@@ -18,15 +18,15 @@ print('live price: ', si.get_live_price('nflx'))
 
 df = pd.DataFrame(si.get_data('nflx', start_date=yesterday))
 print(df)
-# print(df['open'])
+print(df['open'][0])
 # print(df['close'])
 # for i, j in df['close'].items():
 #     if str(i)[:10] == str(yesterday):
 #         print(i)
 #         print(j)
 
-df = pd.DataFrame(si.get_data('nflx', start_date=today))
-print(df)
+# df = pd.DataFrame(si.get_data('nflx', start_date=today))
+# print(df)
 # tlist = float(df['open'])
 # print(tlist)
 # for i, j in df['open'].items():
