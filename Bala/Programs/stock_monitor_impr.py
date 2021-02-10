@@ -614,15 +614,15 @@ if __name__ == '__main__':
 
                     _start_stk_monitor.start_stock_monitor()
 
-                    # str_print = 'Stock monitoring in-progress ...'
-                    # for k in range(60):
-                    #     print('\r' + str_print[:k], end='')
-                    #     time.sleep(.05)
-                    # print('\n')
-                    # dtime_now = datetime.now()
-                    # current_time = dtime_now.strftime("%H:%M:%S")
-                    # print("Stock monitoring in-progress time is: {}".format(current_time))
-                    # time.sleep(600)
+                    str_print = 'Stock monitoring in-progress ...'
+                    for k in range(60):
+                        print('\r' + str_print[:k], end='')
+                        time.sleep(.05)
+                    print('\n')
+                    dtime_now = datetime.now()
+                    current_time = dtime_now.strftime("%H:%M:%S")
+                    print("Stock monitoring in-progress time is: {}".format(current_time))
+                    time.sleep(600)
 
                     _fav_usr_stk_sym_list = list(_db_fav_usr_stk_sym.select_fav_usr_stk_sym_tab(user_id, 'getsymbol'))
                     for sym_list in _fav_usr_stk_sym_list:
