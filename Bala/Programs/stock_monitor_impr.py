@@ -359,7 +359,20 @@ class HandleFavStkTrendDetailsTable:
             _result_set = pd.read_sql_query(_select_qry, db_connection)
             return float(_result_set['Fav_Stk_Trend_Curr_Price'].values)
         except Exception as _error:
-            print('!!! Error: {} while selecting rows from FAV_STK_TREND_DETAILS table !!!'.format(_error))
+            print('!!! Error: {} while selecting row from FAV_STK_TREND_DETAILS table !!!'.format(_error))
+
+    @staticmethod
+    def select_pprice_fav_stk_trend_tab(arg_user_id, arg_symbol_id):
+        user_id = int(arg_user_id)
+        try:
+            _select_qry = "SELECT TOP (1) Fav_Stk_Trend_Prev_Price FROM {}.{}.FAV_STK_TREND_DETAILS " \
+                         "WHERE Fav_Stk_Trend_User_ID = {} AND Fav_Stk_Trend_Symbol = '{}' "  \
+                         "ORDER BY Fav_Stk_Trend_Upd_Tmsp DESC;".\
+                         format(db_name, db_schema, user_id, arg_symbol_id)
+            _result_set = pd.read_sql_query(_select_qry, db_connection)
+            return float(_result_set['Fav_Stk_Trend_Prev_Price'].values)
+        except Exception as _error:
+            print('!!! Error: {} while selecting row from FAV_STK_TREND_DETAILS table !!!'.format(_error))
 
 
 class HandleStockMonitor:
@@ -368,21 +381,24 @@ class HandleStockMonitor:
 
     @staticmethod
     def start_stock_monitor():
-        _monitor_symbols = list(_db_fav_usr_stk_sym.select_fav_usr_stk_sym_tab(user_id, 'getsymbol'))
-        for _monitor_symbol_id in _monitor_symbols:
+
+        _trend_table_symbols = list(_db_fav_usr_stk_sym.select_fav_usr_stk_sym_tab(user_id, 'getsymbol'))
+        _news_df = _load_stk_late_news.get_stock_news(_trend_table_symbols, 1)
+        for index, _monitor_news_rows in _news_df.iterrows():
+            _monitor_news = list(_monitor_news_rows.values)
+            _monitor_symbol = str(_monitor_news[0])
+            _monitor_date = str(datetime.strptime(_monitor_news[1], "%b-%d-%y")).split(' ')[0]
+            _monitor_time = str(_monitor_news[2][:5] + milli_secs)
+            _monitor_details = str(_monitor_news[3][:300].replace("'", ""))
+
+            _db_fav_stk_news.insert_fav_stk_news_tab(user_id, _monitor_symbol, _monitor_date,
+                                                     _monitor_time, _monitor_details)
+            _db_handle_conn.db_commit_opertion()
+
+
+        for _monitor_symbol_id in _trend_table_symbols:
             _prev_stk_price = _db_fav_stk_trend.select_cprice_fav_stk_trend_tab(user_id, _monitor_symbol_id)
             _curr_stk_price = round(_load_stk_live_price.get_live_price(_monitor_symbol_id), 2)
-            _news_df = _load_stk_late_news.get_stock_news(_monitor_symbols, 1)
-
-            for index, _monitor_news_rows in _news_df.iterrows():
-                _monitor_news = list(_monitor_news_rows.values)
-                _monitor_symbol = str(_monitor_news[0])
-                _monitor_date = str(datetime.strptime(_monitor_news[1], "%b-%d-%y")).split(' ')[0]
-                _monitor_time = str(_monitor_news[2][:5] + milli_secs)
-                _monitor_details = str(_monitor_news[3][:300].replace("'", ""))
-                _db_fav_stk_news.insert_fav_stk_news_tab(user_id, _monitor_symbol, _monitor_date,
-                                                         _monitor_time, _monitor_details)
-                _db_handle_conn.db_commit_opertion()
 
             _db_stk_live_price.insert_fav_stk_live_price_tab(user_id, _monitor_symbol_id, _curr_stk_price)
             _db_handle_conn.db_commit_opertion()
@@ -396,24 +412,20 @@ class HandleStockMonitor:
             _news_cnt = 1
             _prev_news = ''
             _curr_news = ''
-            for _monitor_symbol_id in _monitor_symbols:
-                _top2_news_df = list(_db_fav_stk_news.select_top2_fav_stk_news_tab(user_id, _monitor_symbol_id))
-                while True:
-                    for news in _top2_news_df:
-                        if _news_cnt == 1:
-                            _curr_news = str(news)
-                            _news_cnt += 1
-                        else:
-                            _prev_news = str(news)
-                            _news_cnt = 1
-                    break
+            _top2_news_list = list(_db_fav_stk_news.select_top2_fav_stk_news_tab(user_id, _monitor_symbol_id))
+            while True:
+                for news in _top2_news_list:
+                    if _news_cnt == 1:
+                        _curr_news = str(news)
+                        _news_cnt += 1
+                    else:
+                        _prev_news = str(news)
+                        _news_cnt = 1
+                break
 
-                _trend_curr_price = round(_load_stk_live_price.get_live_price(_monitor_symbol_id), 2)
-                _trend_prev_price = _db_fav_stk_trend.select_cprice_fav_stk_trend_tab(user_id, _monitor_symbol_id)
-
-                _db_fav_stk_trend.insert_fav_stk_trend_tab(user_id, _monitor_symbol_id, _trend_prev_price, _prev_news,
-                                                           _trend_curr_price, _curr_news, _trend_analysis)
-                _db_handle_conn.db_commit_opertion()
+            _db_fav_stk_trend.insert_fav_stk_trend_tab(user_id, _monitor_symbol_id, _prev_stk_price, _prev_news,
+                                                       _curr_stk_price, _curr_news, _trend_analysis)
+            _db_handle_conn.db_commit_opertion()
 
 
 if __name__ == '__main__':
@@ -484,7 +496,6 @@ if __name__ == '__main__':
                 if _db_usr_ret_cd == 0:
                     print("No rows found in the STK_USER_DETAILS table for the user id: {} ".format(user_id))
                 else:
-                    print("\n" * 10, end='')
                     print('\n Hello {}. Enter your choice \n'.format(''.join(_db_usr_fname)))
                     print(json.dumps(user_sub_dict, indent=4))
                     user_sub_option = input("Select an option: ")
@@ -493,7 +504,6 @@ if __name__ == '__main__':
                         break
 
                     elif user_sub_option == "a":
-                        print("\n" * 10)
                         load_symbol_df = _load_stk_symbols.load_symbols_dataframe()
                         _db_stock_symbol.delete_stk_sym_det_tab()
 
@@ -511,12 +521,10 @@ if __name__ == '__main__':
                         print('\n')
 
                     elif user_sub_option == "b":
-                        print("\n" * 10)
                         _fav_usr_stK_sym_df = _db_fav_usr_stk_sym.select_fav_usr_stk_sym_tab(user_id, 'display')
                         print(tabulate(_fav_usr_stK_sym_df, headers='keys', tablefmt="psql"))
 
                     elif user_sub_option == "c":
-                        print("\n" * 10)
                         while True:
                             fav_stk_sym = input('Enter Favourite Stock Symbol: ').upper()
                             ret_cd, sym_id, sym_symbol, sym_name = _db_stock_symbol.select_stk_sym_det_tab(fav_stk_sym)
@@ -532,7 +540,6 @@ if __name__ == '__main__':
                                 print('Stock Not Present. Enter the valid stock symbol !!!')
 
                     elif user_sub_option == "d":
-                        print("\n" * 10)
                         fav_stk_sym = input('Enter Favourite Stock Symbol: ').upper()
                         _db_fav_usr_stk_sym.delete_fav_usr_stk_sym_tab(fav_stk_sym)
                         _db_handle_conn.db_commit_opertion()
@@ -609,40 +616,41 @@ if __name__ == '__main__':
 
                     dtime_now = datetime.now()
                     current_time = dtime_now.strftime("%H:%M:%S")
-                    print("Stock monitoring start time is: {}".format(current_time))
-                    time.sleep(600)
+                    print("Stock monitoring 1st cycle start time is: {}".format(current_time))
+                    time.sleep(3)
+                    print('\n')
 
                     _start_stk_monitor.start_stock_monitor()
 
-                    str_print = 'Stock monitoring in-progress ...'
-                    for k in range(60):
-                        print('\r' + str_print[:k], end='')
-                        time.sleep(.05)
-                    print('\n')
                     dtime_now = datetime.now()
                     current_time = dtime_now.strftime("%H:%M:%S")
-                    print("Stock monitoring in-progress time is: {}".format(current_time))
-                    time.sleep(600)
+                    print("Stock monitoring 2nd cycle in-progress time is: {}".format(current_time))
+                    time.sleep(3)
+                    print('\n')
+
+                    _start_stk_monitor.start_stock_monitor()
 
                     _fav_usr_stk_sym_list = list(_db_fav_usr_stk_sym.select_fav_usr_stk_sym_tab(user_id, 'getsymbol'))
                     for sym_list in _fav_usr_stk_sym_list:
-                        _trend_prev_price, _trend_prev_news, _trend_curr_price, _trend_curr_news, _trend_analyze = \
+                        _trnd_prev_price, _trnd_prev_news, _trnd_curr_price, _trnd_curr_news, _trnd_analyze = \
                             _db_fav_stk_trend.select_fav_stk_trend_tab(user_id, sym_list)
-                        if _trend_analyze >= 1:
+                        if _trnd_analyze >= 1:
                             _subject = 'Reg: Your Latest Stock Information'
                             email_content = 'Symbol: {} Price is increased. \n' \
                                             'Previous Value={} \n' \
                                             'Previous News={} \n' \
                                             'Current Value={} \n' \
-                                            'Current News={} \n'.format(sym_list, round(float(_trend_prev_price), 2),
-                                                                        _trend_prev_news, round(float(_trend_curr_price), 2),
-                                                                        _trend_curr_news)
+                                            'Current News={} \n'.format(sym_list,
+                                                                        round(float(_trnd_prev_price), 2),
+                                                                        _trnd_prev_news,
+                                                                        round(float(_trnd_curr_price), 2),
+                                                                        _trnd_curr_news)
                             _send_email_to.send_email(_subject, _db_usr_email, email_content)
 
                     dtime_now = datetime.now()
                     current_time = dtime_now.strftime("%H:%M:%S")
-                    print("Stock monitoring in-progress time is: {}".format(current_time))
-                    if current_time >= '12:59:59':
+                    print("Stock monitoring last cycle in-progress time is: {}".format(current_time))
+                    if current_time >= '10:10:59':
                         str_print = 'Stock monitoring completed.'
                         for k in range(60):
                             print('\r' + str_print[:k], end='')
