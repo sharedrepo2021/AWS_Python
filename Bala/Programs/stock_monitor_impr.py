@@ -617,7 +617,7 @@ if __name__ == '__main__':
                     dtime_now = datetime.now()
                     current_time = dtime_now.strftime("%H:%M:%S")
                     print("Stock monitoring 1st cycle start time is: {}".format(current_time))
-                    time.sleep(3)
+                    time.sleep(600)
                     print('\n')
 
                     _start_stk_monitor.start_stock_monitor()
@@ -625,7 +625,7 @@ if __name__ == '__main__':
                     dtime_now = datetime.now()
                     current_time = dtime_now.strftime("%H:%M:%S")
                     print("Stock monitoring 2nd cycle in-progress time is: {}".format(current_time))
-                    time.sleep(3)
+                    time.sleep(600)
                     print('\n')
 
                     _start_stk_monitor.start_stock_monitor()
@@ -650,7 +650,7 @@ if __name__ == '__main__':
                     dtime_now = datetime.now()
                     current_time = dtime_now.strftime("%H:%M:%S")
                     print("Stock monitoring last cycle in-progress time is: {}".format(current_time))
-                    if current_time >= '10:10:59':
+                    if current_time >= '16:10:59':
                         str_print = 'Stock monitoring completed.'
                         for k in range(60):
                             print('\r' + str_print[:k], end='')
