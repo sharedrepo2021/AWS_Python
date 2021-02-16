@@ -2,13 +2,22 @@ from yahoo_fin import stock_info as si
 from yahoo_fin import options as op
 import datetime
 import pandas as pd
+import calendar
 
 today = datetime.date.today()
 yesterday = today - datetime.timedelta(days = 1)
 tomorrow = today + datetime.timedelta(days = 1)
-# print('Yesterday : ',yesterday)
-# print('Today : ',today)
-# print('Tomorrow : ',tomorrow)
+days_2 = today - datetime.timedelta(days = 3)
+
+int_today = datetime.datetime.today().weekday()
+
+
+
+print('Yesterday    : ', yesterday)
+print('Today        : ', today)
+print('Tomorrow     : ', tomorrow)
+print('days_2       : ', days_2)
+print('int_today    : ', int_today)
 
 # print('analysts info: ', si.get_analysts_info('nflx'))
 print('live price: ', si.get_live_price('nflx'))
@@ -16,9 +25,21 @@ print('live price: ', si.get_live_price('nflx'))
 # print('get data 02', si.get_data('nflx', start_date=today))
 # print('get data 02', si.get_data('nflx', start_date=yesterday))
 
-df = pd.DataFrame(si.get_data('nflx', start_date=yesterday))
-print(df)
-print(df['open'][0])
+df1 = pd.DataFrame(si.get_data('nflx'))
+print(df1['open'])
+
+
+dict1 = si.get_quote_table("nflx")
+print(dict1['Open'])
+
+
+# if int_today == 0:
+#     df = pd.DataFrame(si.get_data('nflx', start_date=days_2))
+# else:
+#     df = pd.DataFrame(si.get_data('nflx', start_date='2021-02-16'))
+#
+# print(df)
+# print(df['open'][0])
 # print(df['close'])
 # for i, j in df['close'].items():
 #     if str(i)[:10] == str(yesterday):

@@ -120,10 +120,8 @@ class HandleStockLivePrice:
     @staticmethod
     def get_open_price(arg_symbol_id):
         try:
-            _today = dt.date.today()
-            _yesterday = _today - dt.timedelta(days=1)
-            _open_df = pd.DataFrame(si.get_data(arg_symbol_id, start_date=_yesterday))
-            return float(_open_df['open'][0])
+            _symbol_quote = si.get_quote_table(arg_symbol_id)
+            return float(_symbol_quote['Open'])
         except Exception as _error:
             print('!!! Error: {} while retrieving the open price !!!'.format(_error))
 
@@ -650,7 +648,7 @@ if __name__ == '__main__':
                     dtime_now = datetime.now()
                     current_time = dtime_now.strftime("%H:%M:%S")
                     print("Stock monitoring last cycle in-progress time is: {}".format(current_time))
-                    if current_time >= '16:10:59':
+                    if current_time >= '12:10:59':
                         str_print = 'Stock monitoring completed.'
                         for k in range(60):
                             print('\r' + str_print[:k], end='')
